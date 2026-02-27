@@ -1,0 +1,9 @@
+{
+  "name": "AES JAC Admin Portal",
+  "description": "A lightweight, web-based admin dashboard for AES staff to input entrepreneurs’ transactions and generate monthly business performance reports.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "prompt": ""
+}

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AES JAC Admin Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;700&family=Playfair+Display:wght@700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            'sans': ['Inter', 'sans-serif'],
+            'mono': ['Roboto Mono', 'monospace'],
+            'serif': ['Playfair Display', 'serif'],
+          },
+          colors: {
+            primary: {
+              DEFAULT: '#0A369D',
+              hover: '#082A7A'
+            },
+            accounting: {
+              red: '#991b1b',
+              slate: '#0f172a',
+              bg: '#f8fafc'
+            },
+            secondary: '#F3F4F6',
+            aesBlue: '#0A369D',
+            aesYellow: '#E1A11A',
+            dark: {
+              primary: '#0d1117',
+              secondary: '#161b22',
+              text: '#e6edf3',
+              border: '#30363d',
+            }
+          },
+          animation: {
+            blob: "blob 10s infinite",
+            float: "float 6s ease-in-out infinite",
+            fadeIn: "fadeIn 0.5s ease-out forwards",
+            slideUp: "slideUp 0.5s ease-out forwards",
+          },
+          keyframes: {
+            blob: {
+              "0%": { transform: "translate(0px, 0px) scale(1)" },
+              "33%": { transform: "translate(30px, -50px) scale(1.1)" },
+              "66%": { transform: "translate(-20px, 20px) scale(0.9)" },
+              "100%": { transform: "translate(0px, 0px) scale(1)" }
+            },
+            float: {
+              "0%, 100%": { transform: "translateY(0)" },
+              "50%": { transform: "translateY(-10px)" },
+            },
+            fadeIn: {
+              "0%": { opacity: "0" },
+              "100%": { opacity: "1" },
+            },
+            slideUp: {
+              "0%": { opacity: "0", transform: "translateY(20px)" },
+              "100%": { opacity: "1", transform: "translateY(0)" },
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+
+      .report-page {
+        page-break-after: always;
+        padding: 0;
+        background: white !important;
+      }
+
+      body {
+        background: white !important;
+      }
+    }
+
+    .accounting-table th {
+      text-align: left;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #64748b;
+      padding: 0.5rem 1rem;
+      border-bottom: 1px solid #0f172a;
+    }
+
+    .accounting-table td {
+      padding: 0.5rem 1rem;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 0.85rem;
+    }
+
+    .negative-num {
+      color: #991b1b;
+    }
+
+    .ticker-box {
+      border-left: 1px solid #e2e8f0;
+      padding-left: 1rem;
+    }
+
+    .ticker-box:first-child {
+      border-left: none;
+      padding-left: 0;
+    }
+  </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "xlsx": "https://esm.sh/xlsx@^0.18.5",
+    "firebase/": "https://esm.sh/firebase@^12.8.0/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.36.0",
+    "recharts": "https://esm.sh/recharts@^3.6.0",
+    "docx": "https://esm.sh/docx@^9.5.1",
+    "file-saver": "https://esm.sh/file-saver@^2.0.5",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+  }
+}
+</script>
+  <link rel="stylesheet" href="/index.css">
+</head>
+
+<body class="bg-secondary dark:bg-dark-primary transition-colors duration-300">
+  <div id="root"></div>
+  <script type="module" src="./index.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
+</html>
