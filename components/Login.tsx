@@ -1,9 +1,10 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Entrepreneur, CurrentUser, User } from '../types';
 import Button from './ui/Button';
 import Select from './ui/Select';
 import Input from './ui/Input';
+import { writeEntrepreneur } from '../services/storageService';
+import { Lock, Smartphone, ShieldCheck, ArrowLeft, Delete } from 'lucide-react';
 
 interface LoginProps {
   onLogin: (user: CurrentUser) => void;
@@ -21,6 +22,11 @@ const Login = ({ onLogin, entrepreneurs, users }: LoginProps) => {
 
   // State for Entrepreneur Login
   const [selectedEntrepreneurId, setSelectedEntrepreneurId] = useState<string>('');
+  const [loginStep, setLoginStep] = useState<'selection' | 'pin-entry' | 'pin-setup'>('selection');
+  const [pin, setPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [isShaking, setIsShaking] = useState(false);
 
   const handleSystemLogin = () => {
     setError('');
@@ -32,10 +38,62 @@ const Login = ({ onLogin, entrepreneurs, users }: LoginProps) => {
     }
   };
 
-  const handleEntrepreneurLogin = () => {
+  const handleEntrepreneurLoginChallenge = () => {
     const entrepreneur = entrepreneurs.find(e => e.id === selectedEntrepreneurId);
     if (entrepreneur) {
-      onLogin({ type: 'entrepreneur', user: entrepreneur });
+      if (entrepreneur.pin) {
+        setLoginStep('pin-entry');
+      } else {
+        setLoginStep('pin-setup');
+      }
+    }
+  };
+
+  const handlePinAction = async (digit: string) => {
+    if (digit === 'DEL') {
+      setPin(prev => prev.slice(0, -1));
+      return;
+    }
+
+    if (pin.length >= 4) return;
+    const newPin = pin + digit;
+    setPin(newPin);
+
+    if (newPin.length === 4) {
+      const entrepreneur = entrepreneurs.find(e => e.id === selectedEntrepreneurId);
+      if (!entrepreneur) return;
+
+      if (loginStep === 'pin-entry') {
+        if (entrepreneur.pin === newPin) {
+          onLogin({ type: 'entrepreneur', user: entrepreneur });
+        } else {
+          setIsShaking(true);
+          setTimeout(() => {
+            setIsShaking(false);
+            setPin('');
+          }, 500);
+        }
+      } else if (loginStep === 'pin-setup') {
+        if (!isConfirming) {
+          setIsConfirming(true);
+          setConfirmPin(newPin);
+          setPin('');
+        } else {
+          if (newPin === confirmPin) {
+            const updatedEntrepreneur = { ...entrepreneur, pin: newPin };
+            await writeEntrepreneur(updatedEntrepreneur);
+            onLogin({ type: 'entrepreneur', user: updatedEntrepreneur });
+          } else {
+            setIsShaking(true);
+            setTimeout(() => {
+              setIsShaking(false);
+              setPin('');
+              setIsConfirming(false);
+              setConfirmPin('');
+            }, 500);
+          }
+        }
+      }
     }
   };
 
@@ -156,7 +214,7 @@ const Login = ({ onLogin, entrepreneurs, users }: LoginProps) => {
               </div>
             )}
 
-            {activeTab === 'entrepreneur' && (
+            {activeTab === 'entrepreneur' && loginStep === 'selection' && (
               <div className="space-y-5 animate-fadeIn">
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-white/80 uppercase tracking-wider ml-1">Select Profile</label>
@@ -174,12 +232,69 @@ const Login = ({ onLogin, entrepreneurs, users }: LoginProps) => {
                 <Button
                   variant="warning"
                   size="lg"
-                  onClick={handleEntrepreneurLogin}
+                  onClick={handleEntrepreneurLoginChallenge}
                   disabled={!selectedEntrepreneurId}
                   className="w-full bg-gradient-to-r from-aesYellow to-yellow-500 hover:from-yellow-400 hover:to-aesYellow text-black border-0 shadow-lg shadow-yellow-900/20 py-3.5 rounded-xl font-bold tracking-wide transform transition-all hover:-translate-y-0.5"
                 >
                   Access Portal
                 </Button>
+              </div>
+            )}
+
+            {activeTab === 'entrepreneur' && (loginStep === 'pin-entry' || loginStep === 'pin-setup') && (
+              <div className={`space-y-6 animate-fadeIn ${isShaking ? 'animate-shake' : ''}`}>
+                <div className="text-center space-y-2">
+                  <div className="mx-auto w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mb-4 backdrop-blur-md border border-white/20">
+                    {loginStep === 'pin-entry' ? <Lock className="text-aesYellow w-6 h-6" /> : <ShieldCheck className="text-aesYellow w-6 h-6" />}
+                  </div>
+                  <h3 className="text-xl font-bold text-white">
+                    {loginStep === 'pin-entry' ? 'Enter PIN' : isConfirming ? 'Confirm PIN' : 'Set Security PIN'}
+                  </h3>
+                  <p className="text-white/60 text-sm">
+                    {loginStep === 'pin-entry' ? 'Access your secure records' : 'Protect your business data'}
+                  </p>
+                </div>
+
+                <div className="flex justify-center gap-4 mb-8">
+                  {[...Array(4)].map((_, i) => (
+                    <div
+                      key={i}
+                      className={`w-4 h-4 rounded-full border-2 transition-all duration-300 ${pin.length > i
+                        ? 'bg-aesYellow border-aesYellow scale-110 shadow-[0_0_15px_rgba(255,200,0,0.5)]'
+                        : 'border-white/20 scale-100'
+                        }`}
+                    />
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 max-w-[280px] mx-auto">
+                  {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'DEL'].map((val, i) => (
+                    <button
+                      key={i}
+                      disabled={val === ''}
+                      onClick={() => handlePinAction(val)}
+                      className={`h-16 flex items-center justify-center text-xl font-bold rounded-2xl transition-all duration-200 ${val === ''
+                        ? 'opacity-0 cursor-default'
+                        : 'bg-white/5 hover:bg-white/10 border border-white/10 active:scale-95 active:bg-white/20 text-white'
+                        }`}
+                    >
+                      {val === 'DEL' ? <Delete className="w-6 h-6 text-white/60" /> : val}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => {
+                    setLoginStep('selection');
+                    setPin('');
+                    setIsConfirming(false);
+                    setConfirmPin('');
+                  }}
+                  className="flex items-center justify-center gap-2 text-white/40 hover:text-white transition-colors text-sm w-full pt-4"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Back to selection
+                </button>
               </div>
             )}
           </div>

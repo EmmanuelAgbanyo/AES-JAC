@@ -1,16 +1,22 @@
 import { ref, onValue, set, remove, update, type Unsubscribe } from "firebase/database";
 import { db } from './firebaseService';
-import type { Entrepreneur, Transaction, User } from '../types';
+import type { Entrepreneur, Transaction, User, InventoryItem } from '../types';
 
 const ENTREPRENEURS_KEY = 'entrepreneurs';
 const TRANSACTIONS_KEY = 'transactions';
 const USERS_KEY = 'users';
 const CLIENTS_KEY = 'clients';
+const INVENTORY_KEY = 'inventory';
+const INVENTORY_LOGS_KEY = 'inventory_logs';
+const SUPPLIERS_KEY = 'suppliers';
 
 const entrepreneursRef = ref(db, ENTREPRENEURS_KEY);
 const transactionsRef = ref(db, TRANSACTIONS_KEY);
 const usersRef = ref(db, USERS_KEY);
-const clientsRef = ref(db, CLIENTS_KEY);
+export const clientsRef = ref(db, CLIENTS_KEY);
+export const inventoryRef = ref(db, INVENTORY_KEY);
+export const inventoryLogsRef = ref(db, INVENTORY_LOGS_KEY);
+export const suppliersRef = ref(db, SUPPLIERS_KEY);
 
 // --- LISTENERS ---
 // These functions listen for changes and convert the Firebase object to an array for the app state
@@ -31,6 +37,7 @@ export const listenToEntrepreneurs = (callback: (data: Entrepreneur[]) => void):
 export const listenToTransactions = (callback: (data: Transaction[]) => void): Unsubscribe => createListener<Transaction>(transactionsRef, callback);
 export const listenToUsers = (callback: (data: User[]) => void): Unsubscribe => createListener<User>(usersRef, callback);
 export const listenToClients = (callback: (data: any[]) => void): Unsubscribe => createListener<any>(clientsRef, callback);
+export const listenToInventory = (callback: (data: any[]) => void): Unsubscribe => createListener<any>(inventoryRef, callback);
 
 
 // --- WRITERS (for individual items) ---
@@ -65,6 +72,44 @@ export const writeClient = (client: any): Promise<void> => {
 export const deleteClient = (id: string): Promise<void> => {
     return remove(ref(db, `${CLIENTS_KEY}/${id}`));
 };
+
+export const writeInventoryItem = (item: InventoryItem): Promise<void> => set(ref(db, `${INVENTORY_KEY}/${item.id}`), item);
+export const deleteInventoryItem = (id: string): Promise<void> => remove(ref(db, `${INVENTORY_KEY}/${id}`));
+
+export const listenToInventoryLogs = (callback: (logs: any[]) => void): Unsubscribe => {
+    return onValue(inventoryLogsRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            const logsArray = Object.keys(data).map(key => ({
+                ...data[key],
+                id: key
+            }));
+            callback(logsArray);
+        } else {
+            callback([]);
+        }
+    });
+};
+
+export const writeInventoryLog = (log: any): Promise<void> => set(ref(db, `${INVENTORY_LOGS_KEY}/${log.id}`), log);
+
+export const listenToSuppliers = (callback: (suppliers: any[]) => void): Unsubscribe => {
+    return onValue(suppliersRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            const suppliersArray = Object.keys(data).map(key => ({
+                ...data[key],
+                id: key
+            }));
+            callback(suppliersArray);
+        } else {
+            callback([]);
+        }
+    });
+};
+
+export const writeSupplier = (supplier: any): Promise<void> => set(ref(db, `${SUPPLIERS_KEY}/${supplier.id}`), supplier);
+export const deleteSupplier = (id: string): Promise<void> => remove(ref(db, `${SUPPLIERS_KEY}/${id}`));
 
 
 // --- OVERWRITE (for seeding and import) ---

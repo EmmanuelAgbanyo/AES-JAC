@@ -9,6 +9,8 @@ import {
     PieChart, Pie, Cell
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 interface HtmlReportViewProps {
     aiReport: AiReport;
@@ -78,25 +80,53 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
         try {
             if (format === 'pdf') {
                 // Wait for state update to make all pages visible
-                await new Promise(resolve => setTimeout(resolve, 100));
+                await new Promise(resolve => setTimeout(resolve, 200));
 
                 // Force a resize event to trigger Recharts update
                 window.dispatchEvent(new Event('resize'));
 
                 // Give charts time to animate/render
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                await new Promise(resolve => setTimeout(resolve, 2000));
 
-                // Rely on the browser's native, highly-optimized Print-to-PDF engine
-                // which handles complex CSS (mix-blend-mode, blur) infinitely better than html2canvas
-                window.print();
+                if (reportRef.current) {
+                    const doc = new jsPDF({
+                        orientation: 'p',
+                        unit: 'mm',
+                        format: 'a4',
+                        compress: true
+                    });
+
+                    const pages = reportRef.current.querySelectorAll('.report-page');
+                    
+                    for (let i = 0; i < pages.length; i++) {
+                        const page = pages[i] as HTMLElement;
+                        const canvas = await html2canvas(page, {
+                            scale: 2, // Retain high quality
+                            useCORS: true,
+                            logging: false,
+                            backgroundColor: '#f8fafc',
+                            windowWidth: 794, // 210mm at 96dpi
+                            windowHeight: 1123, // 297mm at 96dpi
+                        });
+                        
+                        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                        const pdfWidth = doc.internal.pageSize.getWidth();
+                        const pdfHeight = doc.internal.pageSize.getHeight();
+                        
+                        if (i > 0) doc.addPage();
+                        doc.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+                    }
+                    
+                    doc.save(`Financial_Report_${entrepreneur.businessName.replace(/\s/g, '_')}_${period}.pdf`);
+                }
             } else if (format === 'csv') {
                 await exportToCsv(transactionsForPeriod, entrepreneur, period);
             }
         } catch (err) {
             console.error(`Export to ${format} failed:`, err);
         } finally {
-            // Slight delay before unlocking state to ensure print dialog captures the DOM
-            setTimeout(() => setIsExporting(''), 500);
+            // Slight delay before unlocking state
+            setTimeout(() => setIsExporting(''), 1000);
         }
     }, [entrepreneur, transactionsForPeriod, period]);
 
@@ -281,7 +311,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                         <div ref={reportRef} className="w-full max-w-[210mm] mx-auto bg-white shadow-2xl">
 
                             {/* Page 1: COVER PAGE */}
-                            <div className={`${(currentPage === 0 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] h-[297mm] relative overflow-hidden print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-slate-900`}>
+                            <div className={`report-page ${(currentPage === 0 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] h-[297mm] relative overflow-hidden print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-slate-900`}>
                                 {/* High-end abstract background glow meshes */}
                                 <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-600 rounded-full mix-blend-screen opacity-20 blur-[120px] pointer-events-none"></div>
                                 <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-emerald-600 rounded-full mix-blend-screen opacity-10 blur-[150px] pointer-events-none"></div>
@@ -331,7 +361,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                             </div>
 
                             {/* Page 2: Executive Summary & Dashboard */}
-                            <div className={`${(currentPage === 1 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] min-h-[297mm] relative print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-[#f8fafc] p-16`}>
+                            <div className={`report-page ${(currentPage === 1 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] min-h-[297mm] relative print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-[#f8fafc] p-16`}>
                                 <header className="flex justify-between items-start mb-12">
                                     <div className="space-y-4">
                                         <h2 className="text-3xl font-serif font-black tracking-tighter text-slate-900 leading-none flex items-center gap-3">
@@ -469,7 +499,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                             </div>
 
                             {/* Page 3: Visual Analytics */}
-                            <div className={`${(currentPage === 2 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] h-[297mm] relative overflow-hidden print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-[#f8fafc]`}>
+                            <div className={`report-page ${(currentPage === 2 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] h-[297mm] relative overflow-hidden print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-[#f8fafc]`}>
                                 <div className="p-12 h-full flex flex-col relative">
                                     <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-100 rounded-full blur-[100px] opacity-40 pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
                                     <header className="mb-8 flex-shrink-0 relative z-10">
@@ -589,7 +619,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                             </div>
 
                             {/* Page 4: Financial Statements */}
-                            <div className={`${(currentPage === 3 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] min-h-[297mm] relative print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-[#f8fafc]`}>
+                            <div className={`report-page ${(currentPage === 3 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] min-h-[297mm] relative print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-[#f8fafc]`}>
                                 <div className={`p-12 h-full flex flex-col relative z-10 ${isExporting === 'pdf' ? 'h-[297mm] overflow-hidden' : ''}`}>
                                     <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-slate-200 rounded-full blur-[100px] opacity-40 pointer-events-none -translate-y-1/2 translate-x-1/2 z-0"></div>
 
@@ -740,7 +770,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                             </div>
 
                             {/* Page 5: CFO Strategic Deep Dive (Advanced Metrics) */}
-                            <div className={`${(currentPage === 4 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] min-h-[297mm] relative print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-[#f8fafc]`}>
+                            <div className={`report-page ${(currentPage === 4 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] min-h-[297mm] relative print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-[#f8fafc]`}>
                                 <div className={`p-12 h-full flex flex-col relative z-10 ${isExporting === 'pdf' ? 'h-[297mm] overflow-hidden' : ''}`}>
                                     <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-emerald-100/50 rounded-full blur-[100px] opacity-40 pointer-events-none translate-y-1/2 -translate-x-1/2 z-0"></div>
 
@@ -887,7 +917,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                             </div>
 
                             {/* Page 6: Detailed Transaction Ledger */}
-                            <div className={`${(currentPage === 5 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] min-h-[297mm] relative print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-[#f8fafc]`}>
+                            <div className={`report-page ${(currentPage === 5 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] min-h-[297mm] relative print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-[#f8fafc]`}>
                                 <div className={`p-12 h-full flex flex-col relative z-10 ${isExporting === 'pdf' ? 'h-[297mm] overflow-hidden' : ''}`}>
 
                                     <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-slate-200 rounded-full blur-[100px] opacity-40 pointer-events-none -translate-y-1/2 translate-x-1/2 z-0"></div>
@@ -974,7 +1004,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                             </div>
 
                             {/* Page 7: Strategic Revenue & Concentration Risk */}
-                            <div className={`${(currentPage === 6 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] min-h-[297mm] relative print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-[#f8fafc]`}>
+                            <div className={`report-page ${(currentPage === 6 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] min-h-[297mm] relative print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-[#f8fafc]`}>
                                 <div className={`p-12 h-full flex flex-col relative z-10 ${isExporting === 'pdf' ? 'h-[297mm] overflow-hidden' : ''}`}>
                                     <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-100 rounded-full blur-[100px] opacity-40 pointer-events-none -translate-y-1/2 translate-x-1/2 z-0"></div>
                                     <header className="mb-10 flex-shrink-0 relative z-10 w-full flex justify-between items-end border-b border-slate-200 pb-4">
@@ -1099,7 +1129,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
 
 
                             {/* Page 8: Capital Allocation & Expense Architecture */}
-                            <div className={`${(currentPage === 7 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] min-h-[297mm] relative print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-[#f8fafc]`}>
+                            <div className={`report-page ${(currentPage === 7 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] min-h-[297mm] relative print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-[#f8fafc]`}>
                                 <div className={`p-12 h-full flex flex-col relative z-10 ${isExporting === 'pdf' ? 'h-[297mm] overflow-hidden' : ''}`}>
                                     <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-rose-100 rounded-full blur-[100px] opacity-40 pointer-events-none -translate-y-1/2 translate-x-1/2 z-0"></div>
                                     <header className="mb-10 flex-shrink-0 relative z-10 w-full flex justify-between items-end border-b border-slate-200 pb-4">
@@ -1206,7 +1236,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                             </div>
 
                             {/* Page 9: Venture & Credit Readiness Prospectus */}
-                            <div className={`${(currentPage === 8 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] min-h-[297mm] relative print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-slate-900 text-white overflow-hidden`}>
+                            <div className={`report-page ${(currentPage === 8 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] min-h-[297mm] relative print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-slate-900 text-white overflow-hidden`}>
                                 {/* Abstract glowing background for Page 9 */}
                                 <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[60%] bg-fuchsia-600 rounded-full mix-blend-screen opacity-10 blur-[120px] pointer-events-none"></div>
                                 <div className="absolute bottom-[-10%] left-[-20%] w-[50%] h-[50%] bg-blue-600 rounded-full mix-blend-screen opacity-[0.15] blur-[150px] pointer-events-none"></div>
@@ -1301,7 +1331,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                             </div>
 
                             {/* Page 10: Official Audit Sign-off (Back Cover) */}
-                            <div className={`${(currentPage === 9 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] min-h-[297mm] relative print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-slate-950 text-white overflow-hidden`}>
+                            <div className={`report-page ${(currentPage === 9 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] min-h-[297mm] relative print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-slate-950 text-white overflow-hidden`}>
                                 {/* Extravagant subtle glowing core for back cover */}
                                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[100%] h-[100%] bg-indigo-900 rounded-full mix-blend-screen opacity-10 blur-[150px] pointer-events-none"></div>
                                 <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-600 rounded-full mix-blend-screen opacity-10 blur-[100px] pointer-events-none"></div>

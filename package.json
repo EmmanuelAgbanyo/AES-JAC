@@ -15,6 +15,9 @@
     "file-saver": "^2.0.5",
     "firebase": "^12.8.0",
     "framer-motion": "^12.34.3",
+    "html2canvas": "^1.4.1",
+    "jac-beta-root": "file:..",
+    "jspdf": "^4.2.0",
     "lucide-react": "^0.563.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
@@ -28,6 +31,7 @@
     "@vitejs/plugin-react": "^5.0.0",
     "dotenv": "^17.3.1",
     "node-fetch": "^2.7.0",
+    "react-is": "^19.2.4",
     "ts-node": "^10.9.2",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"

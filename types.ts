@@ -25,6 +25,7 @@ export interface Entrepreneur {
   bio?: string;
   goals?: Goal[];
   assignedStaffId?: string;
+  pin?: string;
 }
 
 export interface Client {
@@ -40,6 +41,65 @@ export interface Client {
   lastTransactionDate?: string;
   dateOfBirth?: string;
   totalRevenue?: number;
+}
+
+export interface InventoryItem {
+  id: string;
+  entrepreneurId: string;
+  name: string;
+  sku?: string;
+  quantity: number;
+  price: number;
+  cost: number;
+  category?: string;
+  lowStockThreshold?: number;
+  imageUrl?: string;
+  expiryDate?: string;
+  location?: string;
+  minStockLevel?: number;
+  lastRestockDate?: string;
+  supplierId?: string; // Linked to Supplier
+  dateStocked: string; // ISO Date
+  totalRevenue: number;
+  totalUnitsSold: number;
+  brand?: string;
+  manufacturer?: string;
+  status: 'active' | 'archived' | 'discontinued';
+}
+
+export enum LogType {
+    RESTOCK = 'RESTOCK',
+    SALE = 'SALE',
+    SALE_REVERSAL = 'SALE_REVERSAL',
+    ADJUSTMENT = 'ADJUSTMENT',
+    EXPIRED = 'EXPIRED',
+    DAMAGE = 'DAMAGE',
+    RETURN = 'RETURN',
+    INTERNAL_USE = 'INTERNAL_USE',
+    WASTAGE = 'WASTAGE'
+}
+
+export interface InventoryLog {
+    id: string;
+    itemId: string;
+    entrepreneurId: string;
+    timestamp: string;
+    type: LogType;
+    quantityChange: number;
+    reason: string;
+    performedBy: string;
+}
+
+export interface Supplier {
+    id: string;
+    entrepreneurId: string;
+    name: string;
+    contactName?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    category?: string;
+    notes?: string;
 }
 
 export type CurrentUser =
@@ -58,6 +118,8 @@ export interface Transaction {
   paidStatus?: PaidStatus;
   customerName?: string;
   productServiceCategory?: string;
+  inventoryItemId?: string;
+  quantitySold?: number;
 }
 
 export type PartialTransaction = Partial<Omit<Transaction, 'id' | 'entrepreneurId' | 'amount'>> & { amount?: string | number };

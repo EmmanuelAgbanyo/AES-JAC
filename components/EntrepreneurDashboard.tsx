@@ -13,8 +13,9 @@ import GoalCard from './GoalCard';
 import Modal from './ui/Modal';
 import TransactionForm from './TransactionForm';
 import ClientManager from './ClientManager';
-import { LayoutDashboard, Users, TrendingUp } from 'lucide-react';
-import type { Client } from '../types';
+import { LayoutDashboard, Users, TrendingUp, Package, User, Mail, Phone, Calendar, FileText, Save } from 'lucide-react';
+import type { Client, InventoryItem, Supplier, InventoryLog } from '../types';
+import InventoryManager from './InventoryManager';
 
 
 interface EntrepreneurDashboardProps {
@@ -29,6 +30,17 @@ interface EntrepreneurDashboardProps {
     onAddClient?: (client: Client) => void;
     onUpdateClient?: (client: Client) => void;
     onDeleteClient?: (id: string) => void;
+    inventory?: InventoryItem[];
+    onAddInventoryItem?: (item: InventoryItem) => void;
+    onUpdateInventoryItem?: (item: InventoryItem) => void;
+    onDeleteInventoryItem?: (id: string) => void;
+    suppliers?: Supplier[];
+    onAddSupplier?: (supplier: Supplier) => void;
+    onUpdateSupplier?: (supplier: Supplier) => void;
+    onDeleteSupplier?: (id: string) => void;
+    inventoryLogs?: InventoryLog[];
+    onWriteLog?: (log: InventoryLog) => void;
+    onUpdateEntrepreneur?: (entrepreneur: Entrepreneur) => Promise<void>;
 }
 
 const StatCard = ({ title, value, color, icon }: { title: string, value: string | number, color: string, icon?: ReactNode }) => (
@@ -44,8 +56,8 @@ const StatCard = ({ title, value, color, icon }: { title: string, value: string 
 );
 
 
-const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditTransaction, onSetGoal, userRole, onAddTransaction, clients = [], onAddClient, onUpdateClient, onDeleteClient }: EntrepreneurDashboardProps) => {
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'clients'>('dashboard');
+const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditTransaction, onSetGoal, userRole, onAddTransaction, clients = [], onAddClient, onUpdateClient, onDeleteClient, inventory = [], onAddInventoryItem, onUpdateInventoryItem, onDeleteInventoryItem, suppliers = [], onAddSupplier, onUpdateSupplier, onDeleteSupplier, inventoryLogs = [], onWriteLog, onUpdateEntrepreneur }: EntrepreneurDashboardProps) => {
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'clients' | 'inventory' | 'profile'>('dashboard');
     const [showReportView, setShowReportView] = useState<boolean>(false);
     const [periodType, setPeriodType] = useState<'monthly' | 'yearly'>('monthly');
     const [selectedMonth, setSelectedMonth] = useState<string>('');
@@ -125,6 +137,24 @@ const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditT
             await onAddTransaction(transaction);
             setIsAddTransactionModalOpen(false); // Close modal on success
         }
+    };
+
+    const handleProfileSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!onUpdateEntrepreneur || !entrepreneur) return;
+        
+        const form = e.target as HTMLFormElement;
+        const updated: Entrepreneur = {
+            ...entrepreneur,
+            name: (form.elements.namedItem('name') as HTMLInputElement).value,
+            businessName: (form.elements.namedItem('businessName') as HTMLInputElement).value,
+            contact: (form.elements.namedItem('contact') as HTMLInputElement).value,
+            bio: (form.elements.namedItem('bio') as HTMLTextAreaElement).value,
+            startDate: (form.elements.namedItem('startDate') as HTMLInputElement).value,
+        };
+        
+        await onUpdateEntrepreneur(updated);
+        setActiveTab('dashboard');
     };
 
     const calculateGoalProgress = (goal: Goal) => {
@@ -260,6 +290,7 @@ const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditT
                         onCancel={() => setIsAddTransactionModalOpen(false)}
                         currentEntrepreneur={entrepreneur}
                         entrepreneurs={[]} // Not needed for entrepreneur view
+                        inventory={inventory}
                     />
                 </Modal>
             )}
@@ -286,6 +317,26 @@ const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditT
                     <Users size={18} />
                     <span>Clients</span>
                 </button>
+                <button
+                    onClick={() => setActiveTab('inventory')}
+                    className={`pb-3 px-4 text-sm font-medium transition-colors duration-200 flex items-center space-x-2 ${activeTab === 'inventory'
+                        ? 'border-b-2 border-accent-primary text-accent-primary'
+                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                        }`}
+                >
+                    <Package size={18} />
+                    <span>Inventory</span>
+                </button>
+                <button
+                    onClick={() => setActiveTab('profile')}
+                    className={`pb-3 px-4 text-sm font-medium transition-colors duration-200 flex items-center space-x-2 ${activeTab === 'profile'
+                        ? 'border-b-2 border-accent-primary text-accent-primary'
+                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                        }`}
+                >
+                    <User size={18} />
+                    <span>Profile</span>
+                </button>
             </div>
 
             {activeTab === 'clients' ? (
@@ -301,6 +352,124 @@ const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditT
                     ) : (
                         <div className="p-8 text-center text-gray-500">Client management features are not fully configured.</div>
                     )}
+                </div>
+            ) : activeTab === 'inventory' ? (
+                <div className="animate-fadeIn">
+                    {onAddInventoryItem && onUpdateInventoryItem && onDeleteInventoryItem ? (
+                        <InventoryManager
+                            inventory={inventory}
+                            onAddInventoryItem={onAddInventoryItem}
+                            onUpdateInventoryItem={onUpdateInventoryItem}
+                            onDeleteInventoryItem={onDeleteInventoryItem}
+                            entrepreneurId={entrepreneur.id}
+                            suppliers={suppliers}
+                            onAddSupplier={onAddSupplier}
+                            onUpdateSupplier={onUpdateSupplier}
+                            onDeleteSupplier={onDeleteSupplier}
+                inventoryLogs={inventoryLogs}
+                onWriteLog={onWriteLog}
+                onAddTransaction={onAddTransaction}
+                transactions={transactions.filter(t => t.entrepreneurId === entrepreneur.id)}
+            />
+        ) : (
+                        <div className="p-8 text-center text-gray-500">Inventory management features are not fully configured.</div>
+                    )}
+                </div>
+            ) : activeTab === 'profile' ? (
+                <div className="animate-fadeIn max-w-4xl mx-auto">
+                    <div className="bg-white dark:bg-dark-secondary rounded-2xl shadow-2xl border border-gray-100 dark:border-dark-border overflow-hidden">
+                        <div className="bg-gradient-to-r from-aesBlue to-indigo-600 p-8 text-white relative">
+                            <div className="relative z-10">
+                                <h2 className="text-3xl font-black mb-2">Edit Business Profile</h2>
+                                <p className="text-blue-100 opacity-80">Keep your professional identity up to date</p>
+                            </div>
+                            <div className="absolute top-0 right-0 p-8 opacity-10">
+                                <User size={120} />
+                            </div>
+                        </div>
+                        
+                        <form onSubmit={handleProfileSubmit} className="p-8 space-y-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-4">
+                                    <h4 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-2">Basic Information</h4>
+                                    <div className="relative group">
+                                        <label className="block text-xs font-bold text-gray-500 mb-1 ml-1">Full Name</label>
+                                        <div className="relative">
+                                            <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-aesBlue transition-colors" size={18} />
+                                            <input 
+                                                name="name" 
+                                                defaultValue={entrepreneur.name} 
+                                                className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-dark-primary border border-gray-200 dark:border-dark-border rounded-xl focus:ring-2 focus:ring-aesBlue focus:border-transparent outline-none transition-all"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="relative group">
+                                        <label className="block text-xs font-bold text-gray-500 mb-1 ml-1">Business Name</label>
+                                        <div className="relative">
+                                            <TrendingUp className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-aesBlue transition-colors" size={18} />
+                                            <input 
+                                                name="businessName" 
+                                                defaultValue={entrepreneur.businessName} 
+                                                className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-dark-primary border border-gray-200 dark:border-dark-border rounded-xl focus:ring-2 focus:ring-aesBlue focus:border-transparent outline-none transition-all"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <h4 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-2">Contact & Operations</h4>
+                                    <div className="relative group">
+                                        <label className="block text-xs font-bold text-gray-500 mb-1 ml-1">Contact Email / Phone</label>
+                                        <div className="relative">
+                                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-aesBlue transition-colors" size={18} />
+                                            <input 
+                                                name="contact" 
+                                                defaultValue={entrepreneur.contact} 
+                                                className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-dark-primary border border-gray-200 dark:border-dark-border rounded-xl focus:ring-2 focus:ring-aesBlue focus:border-transparent outline-none transition-all"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="relative group">
+                                        <label className="block text-xs font-bold text-gray-500 mb-1 ml-1">Launch Date</label>
+                                        <div className="relative">
+                                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-aesBlue transition-colors" size={18} />
+                                            <input 
+                                                type="date"
+                                                name="startDate" 
+                                                defaultValue={entrepreneur.startDate} 
+                                                className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-dark-primary border border-gray-200 dark:border-dark-border rounded-xl focus:ring-2 focus:ring-aesBlue focus:border-transparent outline-none transition-all"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="relative group">
+                                <label className="block text-xs font-bold text-gray-500 mb-1 ml-1">Business Bio / Value Proposition</label>
+                                <div className="relative">
+                                    <FileText className="absolute left-4 top-4 text-gray-400 group-focus-within:text-aesBlue transition-colors" size={18} />
+                                    <textarea 
+                                        name="bio" 
+                                        defaultValue={entrepreneur.bio} 
+                                        rows={4}
+                                        className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-dark-primary border border-gray-200 dark:border-dark-border rounded-xl focus:ring-2 focus:ring-aesBlue focus:border-transparent outline-none transition-all resize-none"
+                                        placeholder="Describe what your business does..."
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="pt-4 flex justify-end gap-3">
+                                <Button type="button" variant="secondary" onClick={() => setActiveTab('dashboard')}>Cancel</Button>
+                                <Button type="submit" className="px-8 bg-gradient-to-r from-aesBlue to-indigo-600 shadow-lg shadow-indigo-500/20" icon={<Save size={18} />}>
+                                    Save Profile Changes
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             ) : (
                 <div className="space-y-8 animate-fadeIn">

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, type ChangeEvent, useRef } from 'react';
 import { PaymentMethod, PaidStatus, TransactionType, USERS, AppView } from './constants';
-import type { Entrepreneur, Transaction, Goal, CurrentUser, User, PartialTransaction, Client } from './types';
+import type { Entrepreneur, Transaction, Goal, CurrentUser, User, PartialTransaction, Client, InventoryItem, Supplier, InventoryLog } from './types';
 import { Role } from './types';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
@@ -21,6 +21,14 @@ import {
   deleteUser,
   writeClient,
   deleteClient,
+  writeInventoryItem,
+  deleteInventoryItem,
+  listenToInventory,
+  listenToSuppliers,
+  listenToInventoryLogs,
+  writeSupplier,
+  deleteSupplier,
+  writeInventoryLog,
   overwriteEntrepreneurs,
   overwriteTransactions,
   overwriteUsers,
@@ -58,6 +66,10 @@ const AppContent = () => {
   const [entrepreneurs, setEntrepreneurs] = useState<Entrepreneur[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [inventoryLogs, setInventoryLogs] = useState<InventoryLog[]>([]);
+  const [showNotification, setShowNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   const [editingEntrepreneur, setEditingEntrepreneur] = useState<Entrepreneur | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [scannedTransaction, setScannedTransaction] = useState<PartialTransaction | null>(null);
@@ -78,10 +90,10 @@ const AppContent = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Default to open sidebar
 
-  const dataLoaded = useRef({ entrepreneurs: false, transactions: false, users: false, clients: false });
+  const dataLoaded = useRef({ entrepreneurs: false, transactions: false, users: false, clients: false, inventory: false, suppliers: false, inventoryLogs: false });
 
   const checkAllDataLoaded = () => {
-    if (dataLoaded.current.entrepreneurs && dataLoaded.current.transactions && dataLoaded.current.users && dataLoaded.current.clients) {
+    if (dataLoaded.current.entrepreneurs && dataLoaded.current.transactions && dataLoaded.current.users && dataLoaded.current.clients && dataLoaded.current.inventory && dataLoaded.current.suppliers && dataLoaded.current.inventoryLogs) {
       setIsLoading(false);
     }
   };
@@ -115,13 +127,39 @@ const AppContent = () => {
       checkAllDataLoaded();
     });
 
+    const unsubscribeInventory = listenToInventory((data) => {
+      setInventory(data);
+      dataLoaded.current.inventory = true;
+      checkAllDataLoaded();
+    });
+
+    const unsubscribeSuppliers = listenToSuppliers((data) => {
+      setSuppliers(data);
+      dataLoaded.current.suppliers = true;
+      checkAllDataLoaded();
+    });
+
+    const unsubscribeInventoryLogs = listenToInventoryLogs((data) => {
+      setInventoryLogs(data);
+      dataLoaded.current.inventoryLogs = true;
+      checkAllDataLoaded();
+    });
+
     return () => {
       unsubscribeUsers();
       unsubscribeEntrepreneurs();
       unsubscribeTransactions();
       unsubscribeClients();
+      unsubscribeInventory();
+      unsubscribeSuppliers();
+      unsubscribeInventoryLogs();
     };
   }, []);
+
+  const handleShowNotification = (message: string, type: 'success' | 'error') => {
+    setShowNotification({ message, type });
+    setTimeout(() => setShowNotification(null), 3000); // Hide after 3 seconds
+  };
 
   const handleAddOrUpdateClient = async (client: Client) => {
     await writeClient(client);
@@ -130,6 +168,61 @@ const AppContent = () => {
   const handleDeleteClient = async (id: string) => {
     await deleteClient(id);
   };
+
+  const handleWriteInventoryItem = async (item: InventoryItem) => {
+    try {
+      await writeInventoryItem(item);
+      handleShowNotification('Inventory item saved successfully!', 'success');
+    } catch (error) {
+      handleShowNotification('Failed to save inventory item.', 'error');
+    }
+  };
+
+  const handleDeleteInventoryItem = async (id: string) => {
+    try {
+      await deleteInventoryItem(id);
+      handleShowNotification('Inventory item deleted!', 'success');
+    } catch (error) {
+      handleShowNotification('Failed to delete item.', 'error');
+    }
+  };
+
+  const handleWriteSupplier = async (supplier: Supplier) => {
+    try {
+      await writeSupplier(supplier);
+      handleShowNotification('Supplier saved successfully!', 'success');
+    } catch (error) {
+      handleShowNotification('Failed to save supplier.', 'error');
+    }
+  };
+
+  const handleDeleteSupplier = async (id: string) => {
+    try {
+      await deleteSupplier(id);
+      handleShowNotification('Supplier deleted!', 'success');
+    } catch (error) {
+      handleShowNotification('Failed to delete supplier.', 'error');
+    }
+  };
+
+  const handleUpdateEntrepreneur = async (updatedEntrepreneur: Entrepreneur) => {
+    try {
+      await writeEntrepreneur(updatedEntrepreneur);
+      
+      if (selectedDashboardEntrepreneur?.id === updatedEntrepreneur.id) {
+        setSelectedDashboardEntrepreneur(updatedEntrepreneur);
+      }
+      if (currentUser?.type === 'entrepreneur' && currentUser.user.id === updatedEntrepreneur.id) {
+        const newCurrentUser = { ...currentUser, user: updatedEntrepreneur };
+        setCurrentUser(newCurrentUser);
+        localStorage.setItem('currentUser', JSON.stringify(newCurrentUser));
+      }
+      handleShowNotification('Profile updated successfully!', 'success');
+    } catch (error) {
+      handleShowNotification('Failed to update profile.', 'error');
+    }
+  };
+
   const handleLogin = (user: CurrentUser) => {
     setCurrentUser(user);
     localStorage.setItem('currentUser', JSON.stringify(user));
@@ -260,6 +353,10 @@ const AppContent = () => {
   const handleAddScannedTransaction = async (transaction: Transaction) => {
     await writeTransaction(transaction);
     setScannedTransaction(null);
+  };
+
+  const handleWriteTransaction = async (transaction: Transaction) => {
+    await writeTransaction(transaction);
   };
 
   const handleUpdateTransaction = async (updatedTransaction: Transaction) => {
@@ -582,6 +679,17 @@ const AppContent = () => {
             onAddClient={handleAddOrUpdateClient}
             onUpdateClient={handleAddOrUpdateClient}
             onDeleteClient={handleDeleteClient}
+            inventory={inventory.filter(i => i.entrepreneurId === selectedDashboardEntrepreneur?.id)}
+            onAddInventoryItem={handleWriteInventoryItem}
+            onUpdateInventoryItem={handleWriteInventoryItem}
+            onDeleteInventoryItem={handleDeleteInventoryItem}
+            suppliers={suppliers}
+            onAddSupplier={handleWriteSupplier}
+            onUpdateSupplier={handleWriteSupplier}
+            onDeleteSupplier={handleDeleteSupplier}
+            inventoryLogs={inventoryLogs}
+            onWriteLog={writeInventoryLog}
+            onAddTransaction={handleWriteTransaction}
           />
         );
       case AppView.TRANSACTIONS:
@@ -624,6 +732,14 @@ const AppContent = () => {
         onAddClient={handleAddOrUpdateClient}
         onUpdateClient={handleAddOrUpdateClient}
         onDeleteClient={handleDeleteClient}
+        inventory={inventory.filter(i => i.entrepreneurId === currentUser.user.id)}
+        onAddInventoryItem={handleWriteInventoryItem}
+        onUpdateInventoryItem={handleWriteInventoryItem}
+        onDeleteInventoryItem={handleDeleteInventoryItem}
+        onDeleteSupplier={handleDeleteSupplier}
+        inventoryLogs={inventoryLogs}
+        onWriteLog={writeInventoryLog}
+        onUpdateEntrepreneur={handleUpdateEntrepreneur}
       />
     );
   };
@@ -757,7 +873,7 @@ const AppContent = () => {
           {process.env.API_KEY && (
             <ChatWidget
               entrepreneurs={visibleEntrepreneurs()}
-              onAddTransaction={writeTransaction}
+              onAddTransaction={handleWriteTransaction}
             />
           )}
         </div>

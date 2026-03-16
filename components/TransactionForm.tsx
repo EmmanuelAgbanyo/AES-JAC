@@ -1,9 +1,10 @@
 import React, { useState, type ChangeEvent, type FormEvent, useEffect, useRef } from 'react';
-import type { Entrepreneur, Transaction, PartialTransaction } from '../types';
+import type { Entrepreneur, Transaction, PartialTransaction, InventoryItem } from '../types';
 import { TransactionType, PaymentMethod, PaidStatus } from '../constants';
 import Button from './ui/Button';
 import Input from './ui/Input';
 import Select from './ui/Select';
+import { Package } from 'lucide-react';
 
 interface TransactionFormProps {
   onSubmit: (transaction: Transaction) => void;
@@ -11,9 +12,10 @@ interface TransactionFormProps {
   initialData?: Transaction | PartialTransaction;
   entrepreneurs: Entrepreneur[];
   currentEntrepreneur?: Entrepreneur; // For logged-in entrepreneur view
+  inventory?: InventoryItem[];
 }
 
-const TransactionForm = ({ onSubmit, onCancel, initialData, entrepreneurs, currentEntrepreneur }: TransactionFormProps) => {
+const TransactionForm = ({ onSubmit, onCancel, initialData, entrepreneurs, currentEntrepreneur, inventory = [] }: TransactionFormProps) => {
   const lastSubmittedType = useRef<TransactionType>(TransactionType.INCOME);
   
   const getInitialState = () => {
@@ -30,6 +32,8 @@ const TransactionForm = ({ onSubmit, onCancel, initialData, entrepreneurs, curre
         paidStatus: initialData.paidStatus || PaidStatus.FULL,
         customerName: initialData.customerName || '',
         productServiceCategory: initialData.productServiceCategory || '',
+        inventoryItemId: initialData.inventoryItemId || '',
+        quantitySold: String(initialData.quantitySold || '1'),
       };
     }
     return {
@@ -42,6 +46,8 @@ const TransactionForm = ({ onSubmit, onCancel, initialData, entrepreneurs, curre
       paidStatus: PaidStatus.FULL,
       customerName: '',
       productServiceCategory: '',
+      inventoryItemId: '',
+      quantitySold: '1',
     };
   };
 
@@ -101,7 +107,28 @@ const TransactionForm = ({ onSubmit, onCancel, initialData, entrepreneurs, curre
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => {
+        const newData = { ...prev, [name]: value };
+        
+        // Auto-fill amount if an inventory item is selected and it's an income
+        if (name === 'inventoryItemId' && newData.type === TransactionType.INCOME && value !== '') {
+            const item = inventory.find(i => i.id === value);
+            if (item) {
+                newData.amount = String(item.price * parseFloat(newData.quantitySold || '1'));
+                if (!newData.description) newData.description = `Sale: ${item.name}`;
+            }
+        }
+        
+        // Re-calculate amount if quantity sold changes
+        if (name === 'quantitySold' && newData.type === TransactionType.INCOME && newData.inventoryItemId) {
+            const item = inventory.find(i => i.id === newData.inventoryItemId);
+            if (item) {
+                newData.amount = String(item.price * parseFloat(value || '0'));
+            }
+        }
+        
+        return newData;
+    });
      if (errors[name as keyof typeof errors]) {
         setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -120,6 +147,8 @@ const TransactionForm = ({ onSubmit, onCancel, initialData, entrepreneurs, curre
           ...formData,
           id: (initialData && 'id' in initialData) ? initialData.id! : crypto.randomUUID(),
           amount: parseFloat(formData.amount),
+          inventoryItemId: formData.inventoryItemId || undefined,
+          quantitySold: formData.inventoryItemId ? parseFloat(formData.quantitySold) : undefined,
         } as Transaction;
 
         // For expenses, paidStatus is not applicable.
@@ -247,6 +276,37 @@ const TransactionForm = ({ onSubmit, onCancel, initialData, entrepreneurs, curre
         value={formData.productServiceCategory || ''}
         onChange={handleChange}
       />
+
+      {formData.type === TransactionType.INCOME && inventory.length > 0 && (
+        <div className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-900/20 space-y-4">
+          <p className="text-sm font-semibold text-blue-700 dark:text-blue-400 flex items-center">
+            <Package size={16} className="mr-2" /> Link to Inventory (Optional)
+          </p>
+          <Select
+            label="Select Product"
+            id="inventoryItemId"
+            name="inventoryItemId"
+            value={formData.inventoryItemId}
+            onChange={handleChange}
+            options={[
+              { value: '', label: 'None (One-time Sale/Service)' },
+              ...inventory.map(i => ({ value: i.id, label: `${i.name} (Stock: ${i.quantity})` }))
+            ]}
+          />
+          {formData.inventoryItemId && (
+            <Input
+              label="Quantity Sold"
+              id="quantitySold"
+              name="quantitySold"
+              type="number"
+              value={formData.quantitySold}
+              onChange={handleChange}
+              required
+            />
+          )}
+        </div>
+      )}
+
       <div className="flex justify-end items-center space-x-3 pt-4 border-t dark:border-dark-border mt-4">
          {onCancel && <Button type="button" variant="secondary" onClick={onCancel} disabled={isSuccess}>Cancel</Button>}
          <Button type="submit" variant={isSuccess ? "success" : "primary"} disabled={isSuccess}>
