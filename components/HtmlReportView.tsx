@@ -9,8 +9,7 @@ import {
     PieChart, Pie, Cell
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
+import { useReactToPrint } from 'react-to-print';
 
 interface HtmlReportViewProps {
     aiReport: AiReport;
@@ -68,6 +67,11 @@ const FinancialTable = ({ rows, baseAmount, isExpense = false }: { rows: AiRepor
 
 const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period, onClose, autoExportAs }: HtmlReportViewProps) => {
     const reportRef = useRef<HTMLDivElement>(null);
+    const handlePrint = useReactToPrint({
+        contentRef: reportRef,
+        documentTitle: `Financial_Report_${entrepreneur.businessName.replace(/\s/g, '_')}_${period}`,
+        onAfterPrint: () => setIsExporting(''),
+    });
 
     const [isExporting, setIsExporting] = useState('');
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
@@ -79,46 +83,13 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
 
         try {
             if (format === 'pdf') {
-                // Wait for state update to make all pages visible
-                await new Promise(resolve => setTimeout(resolve, 200));
+                setIsExportMenuOpen(false);
+                setIsExporting('pdf');
 
-                // Force a resize event to trigger Recharts update
-                window.dispatchEvent(new Event('resize'));
-
-                // Give charts time to animate/render
-                await new Promise(resolve => setTimeout(resolve, 2000));
-
-                if (reportRef.current) {
-                    const doc = new jsPDF({
-                        orientation: 'p',
-                        unit: 'mm',
-                        format: 'a4',
-                        compress: true
-                    });
-
-                    const pages = reportRef.current.querySelectorAll('.report-page');
-                    
-                    for (let i = 0; i < pages.length; i++) {
-                        const page = pages[i] as HTMLElement;
-                        const canvas = await html2canvas(page, {
-                            scale: 2, // Retain high quality
-                            useCORS: true,
-                            logging: false,
-                            backgroundColor: '#f8fafc',
-                            windowWidth: 794, // 210mm at 96dpi
-                            windowHeight: 1123, // 297mm at 96dpi
-                        });
-                        
-                        const imgData = canvas.toDataURL('image/jpeg', 0.95);
-                        const pdfWidth = doc.internal.pageSize.getWidth();
-                        const pdfHeight = doc.internal.pageSize.getHeight();
-                        
-                        if (i > 0) doc.addPage();
-                        doc.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
-                    }
-                    
-                    doc.save(`Financial_Report_${entrepreneur.businessName.replace(/\s/g, '_')}_${period}.pdf`);
-                }
+                // Wait for the UI to update with all pages showing
+                setTimeout(() => {
+                    handlePrint();
+                }, 500);
             } else if (format === 'csv') {
                 await exportToCsv(transactionsForPeriod, entrepreneur, period);
             }
@@ -128,7 +99,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
             // Slight delay before unlocking state
             setTimeout(() => setIsExporting(''), 1000);
         }
-    }, [entrepreneur, transactionsForPeriod, period]);
+    }, [entrepreneur, transactionsForPeriod, period, handlePrint]);
 
     useEffect(() => {
         if (autoExportAs === 'pdf' && !hasAutoExported && reportRef.current) {
