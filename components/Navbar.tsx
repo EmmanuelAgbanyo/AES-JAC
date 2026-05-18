@@ -4,9 +4,16 @@ import Button from './ui/Button';
 import type { CurrentUser } from '../types';
 import { Role } from '../types';
 import ThemeToggle from './ui/ThemeToggle';
+import DashboardIcon from './icons/DashboardIcon';
+import EntrepreneursIcon from './icons/EntrepreneursIcon';
+import TransactionsIcon from './icons/TransactionsIcon';
+import ReportsIcon from './icons/ReportsIcon';
+import GrowthHubIcon from './icons/GrowthHubIcon';
+import UserManagementIcon from './icons/UserManagementIcon';
 
 interface NavbarProps {
   currentUser: CurrentUser;
+  currentView?: AppView;
   navigateTo: (view: AppView) => void;
   onLogout: () => void;
   onExport: () => void;
@@ -15,7 +22,7 @@ interface NavbarProps {
   onResetData: () => void;
 }
 
-const Navbar = ({ currentUser, navigateTo, onLogout, onExport, onImport, onAskAi, onResetData }: NavbarProps) => {
+const Navbar = ({ currentUser, currentView, navigateTo, onLogout, onExport, onImport, onAskAi, onResetData }: NavbarProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -34,6 +41,12 @@ const Navbar = ({ currentUser, navigateTo, onLogout, onExport, onImport, onAskAi
   const canAskAi = currentUser.type === 'system' && [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF].includes(currentUser.user.role);
   const isSuperAdmin = currentUser.type === 'system' && currentUser.user.role === Role.SUPER_ADMIN;
 
+  const getIsActive = (view: AppView) => {
+      if (view === AppView.ENTREPRENEURS) {
+          return [AppView.ENTREPRENEURS, AppView.ADD_ENTREPRENEUR, AppView.EDIT_ENTREPRENEUR, AppView.ENTREPRENEUR_DASHBOARD].includes(currentView as AppView);
+      }
+      return currentView === view;
+  };
 
   const renderNavLinks = () => (
     <div className="flex flex-col md:flex-row items-stretch md:items-center md:space-x-4">
@@ -142,26 +155,37 @@ const Navbar = ({ currentUser, navigateTo, onLogout, onExport, onImport, onAskAi
       >
         <div className="px-4 pt-4 pb-6 space-y-2">
           {currentUser.type === 'system' && (
-            <div className="flex flex-col space-y-1 mb-4">
+            <div className="flex flex-col space-y-2 mb-4">
               <div className="px-3 text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">Navigation</div>
               {[
-                { view: AppView.DASHBOARD, label: 'Dashboard', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF] },
-                { view: AppView.ENTREPRENEURS, label: 'Entrepreneurs', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF] },
-                { view: AppView.TRANSACTIONS, label: 'Transactions', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF] },
-                { view: AppView.REPORTS, label: 'Reports', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF] },
-                { view: AppView.GROWTH_HUB, label: 'Growth Hub', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF] },
-                { view: AppView.USER_MANAGEMENT, label: 'User Management', roles: [Role.SUPER_ADMIN] },
+                { view: AppView.DASHBOARD, label: 'Dashboard', icon: <DashboardIcon />, roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF] },
+                { view: AppView.ENTREPRENEURS, label: 'Entrepreneurs', icon: <EntrepreneursIcon />, roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF] },
+                { view: AppView.TRANSACTIONS, label: 'Transactions', icon: <TransactionsIcon />, roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF] },
+                { view: AppView.REPORTS, label: 'Reports', icon: <ReportsIcon />, roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF] },
+                { view: AppView.GROWTH_HUB, label: 'Growth Hub', icon: <GrowthHubIcon />, roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF] },
+                { view: AppView.USER_MANAGEMENT, label: 'User Management', icon: <UserManagementIcon />, roles: [Role.SUPER_ADMIN] },
               ]
                 .filter(item => item.roles.includes(currentUser.user.role))
-                .map(item => (
-                  <button
-                    key={item.view}
-                    onClick={() => { navigateTo(item.view); setIsMobileMenuOpen(false); }}
-                    className="text-left px-3 py-2.5 rounded-xl text-base font-medium text-white hover:bg-white/10 transition-colors w-full"
-                  >
-                    {item.label}
-                  </button>
-                ))}
+                .map(item => {
+                  const isActive = getIsActive(item.view);
+                  return (
+                    <button
+                      key={item.view}
+                      onClick={() => { navigateTo(item.view); setIsMobileMenuOpen(false); }}
+                      className={`flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all duration-300 w-full ${isActive
+                        ? 'bg-aesBlue text-white shadow-lg shadow-aesBlue/25 translate-x-1'
+                        : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                        }`}
+                    >
+                      <span className={`transform transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
+                        {item.icon}
+                      </span>
+                      <span className="font-medium whitespace-nowrap">
+                        {item.label}
+                      </span>
+                    </button>
+                  );
+                })}
               <div className="border-t border-white/10 my-3"></div>
             </div>
           )}

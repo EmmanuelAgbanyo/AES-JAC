@@ -848,6 +848,7 @@ const AppContent = () => {
 
           <Navbar
             currentUser={currentUser}
+            currentView={currentView}
             navigateTo={navigateTo}
             onLogout={handleLogout}
             onExport={handleDataExport}
