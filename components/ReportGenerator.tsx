@@ -83,7 +83,6 @@ const ReportGenerator = ({ entrepreneurs, transactions }: ReportGeneratorProps) 
       let report: AiReport;
 
       if (reportMode === 'ai') {
-        if (!process.env.API_KEY) throw new Error("Gemini API key not configured.");
         report = await generateAiPoweredReport(relevantTransactions, entrepreneur, period, entrepreneur.goals);
       } else {
         // Construct a "Standard" report using reportService logic

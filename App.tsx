@@ -690,6 +690,7 @@ const AppContent = () => {
             inventoryLogs={inventoryLogs}
             onWriteLog={writeInventoryLog}
             onAddTransaction={handleWriteTransaction}
+            onUpdateEntrepreneur={handleUpdateEntrepreneur}
           />
         );
       case AppView.TRANSACTIONS:
@@ -837,12 +838,12 @@ const AppContent = () => {
       )}
 
       {currentUser ? (
-        <div className="min-h-screen flex flex-col bg-[#f0f2f5] dark:bg-[#0f1115] transition-colors duration-300 relative overflow-hidden">
+        <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#0f1115] transition-colors duration-300 relative overflow-hidden">
           {/* Ambient Background Mesh */}
-          <div className="fixed inset-0 z-0 pointer-events-none">
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-200/30 dark:bg-purple-900/10 rounded-full blur-[120px] animate-pulse-slow"></div>
-            <div className="absolute top-[20%] right-[-5%] w-[30%] h-[30%] bg-blue-200/30 dark:bg-blue-900/10 rounded-full blur-[100px] animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
-            <div className="absolute bottom-[-10%] left-[20%] w-[35%] h-[35%] bg-teal-200/20 dark:bg-teal-900/10 rounded-full blur-[100px] animate-pulse-slow" style={{ animationDelay: '4s' }}></div>
+          <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+            <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-300/40 dark:bg-indigo-900/20 rounded-full blur-[120px] animate-blob mix-blend-multiply dark:mix-blend-screen"></div>
+            <div className="absolute top-[20%] right-[-5%] w-[40%] h-[40%] bg-purple-300/40 dark:bg-purple-900/20 rounded-full blur-[120px] animate-blob animation-delay-2000 mix-blend-multiply dark:mix-blend-screen"></div>
+            <div className="absolute bottom-[-10%] left-[20%] w-[45%] h-[45%] bg-blue-300/40 dark:bg-blue-900/20 rounded-full blur-[120px] animate-blob animation-delay-4000 mix-blend-multiply dark:mix-blend-screen"></div>
           </div>
 
           <Navbar

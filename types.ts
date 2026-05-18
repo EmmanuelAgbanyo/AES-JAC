@@ -26,6 +26,7 @@ export interface Entrepreneur {
   goals?: Goal[];
   assignedStaffId?: string;
   pin?: string;
+  logoUrl?: string;
 }
 
 export interface Client {
@@ -160,7 +161,7 @@ export interface ReportData {
       marginOfSafety: number;
     };
     workingCapitalCycle: {
-      daysSalesOwing: number;
+      daysSalesOutstanding: number;
       daysPayableOutstanding: number;
       cashConversionCycle: number;
     };
@@ -242,6 +243,30 @@ export interface AiReport {
     dupontAnalysis: string;
     breakEvenAnalysis: string;
     efficiencyMetrics: string;
+  };
+
+  // Strategic Metrics Object
+  cfoMetrics?: {
+    dupont: {
+      roe: number;
+      netProfitMargin: number;
+      assetTurnover: number;
+      equityMultiplier: number;
+    };
+    breakEven: {
+      breakEvenRevenue: number;
+      marginOfSafety: number;
+    };
+    workingCapitalCycle: {
+      daysSalesOutstanding: number;
+      daysPayableOutstanding: number;
+      cashConversionCycle: number;
+    };
+    creditReadiness: {
+      dscr: number;
+      quickRatio: number;
+      impliedValuation: number;
+    };
   };
 
   // Venture & Credit Pitch

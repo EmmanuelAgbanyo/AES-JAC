@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@google/genai": "^1.36.0",
+    "@heyputer/puter.js": "^2.3.2",
+    "build": "^0.1.4",
     "docx": "^9.5.1",
     "file-saver": "^2.0.5",
     "firebase": "^12.8.0",

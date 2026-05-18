@@ -9,8 +9,6 @@ import {
     PieChart, Pie, Cell
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 
 interface HtmlReportViewProps {
     aiReport: AiReport;
@@ -46,24 +44,39 @@ const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
     </div>
 );
 
+const parseAmount = (val: string | number | undefined | null): number => {
+    if (val === undefined || val === null) return 0;
+    const parsed = parseFloat(String(val).replace(/[^0-9.-]+/g, ""));
+    return isNaN(parsed) ? 0 : parsed;
+};
+
 // Moved strict FinancialTable definition here to avoid 'use before declaration' errors with const
 const FinancialTable = ({ rows, baseAmount, isExpense = false }: { rows: AiReportLineItem[], baseAmount: number, isExpense?: boolean }) => (
-    <div className="text-[10px] w-full">
+    <motion.div 
+        initial="hidden" 
+        animate="visible" 
+        variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
+        className="text-[10px] w-full"
+    >
         {rows.map((row, index) => {
-            const amountVal = parseFloat(row.amount.replace(/[^0-9.-]+/g, ""));
+            const amountVal = parseAmount(row.amount);
             const percentage = baseAmount > 0 ? (amountVal / baseAmount) * 100 : 0;
 
             return (
-                <div key={index} className={`flex justify-between items-center py-1.5 px-4 border-b border-solid border-slate-200 ${row.isTotal ? 'font-bold text-slate-900 bg-transparent border-t-2 border-solid border-slate-900 py-2' : 'text-slate-700'}`}>
+                <motion.div 
+                    variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
+                    key={index} 
+                    className={`flex justify-between items-center py-1.5 px-4 border-b border-solid border-slate-200 ${row.isTotal ? 'font-bold text-slate-900 bg-transparent border-t-2 border-solid border-slate-900 py-2' : 'text-slate-700'}`}
+                >
                     <span className={`w-1/2 ${row.indent ? 'pl-4' : ''} truncate font-serif text-xs`}>{row.label}</span>
                     <span className={`w-1/4 text-right font-mono ${row.isNegative ? '' : ''}`}>{row.isNegative ? `(${row.amount})` : row.amount}</span>
                     <span className="w-1/4 text-right text-[9px] text-slate-400 font-mono mt-0.5">
                         {percentage.toFixed(1)}%
                     </span>
-                </div>
+                </motion.div>
             )
         })}
-    </div>
+    </motion.div>
 );
 
 const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period, onClose, autoExportAs }: HtmlReportViewProps) => {
@@ -79,45 +92,18 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
 
         try {
             if (format === 'pdf') {
-                // Wait for state update to make all pages visible
-                await new Promise(resolve => setTimeout(resolve, 200));
+                // Wait for state update to make all pages visible and apply @media print styles
+                await new Promise(resolve => setTimeout(resolve, 300));
 
-                // Force a resize event to trigger Recharts update
+                // Force a resize event to trigger Recharts update to adjust to full width
                 window.dispatchEvent(new Event('resize'));
 
-                // Give charts time to animate/render
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Give charts time to animate/render and browser time to apply print styles
+                await new Promise(resolve => setTimeout(resolve, 1500));
 
                 if (reportRef.current) {
-                    const doc = new jsPDF({
-                        orientation: 'p',
-                        unit: 'mm',
-                        format: 'a4',
-                        compress: true
-                    });
-
-                    const pages = reportRef.current.querySelectorAll('.report-page');
-                    
-                    for (let i = 0; i < pages.length; i++) {
-                        const page = pages[i] as HTMLElement;
-                        const canvas = await html2canvas(page, {
-                            scale: 2, // Retain high quality
-                            useCORS: true,
-                            logging: false,
-                            backgroundColor: '#f8fafc',
-                            windowWidth: 794, // 210mm at 96dpi
-                            windowHeight: 1123, // 297mm at 96dpi
-                        });
-                        
-                        const imgData = canvas.toDataURL('image/jpeg', 0.95);
-                        const pdfWidth = doc.internal.pageSize.getWidth();
-                        const pdfHeight = doc.internal.pageSize.getHeight();
-                        
-                        if (i > 0) doc.addPage();
-                        doc.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
-                    }
-                    
-                    doc.save(`Financial_Report_${entrepreneur.businessName.replace(/\s/g, '_')}_${period}.pdf`);
+                    // Trigger native high-quality PDF print dialog
+                    window.print();
                 }
             } else if (format === 'csv') {
                 await exportToCsv(transactionsForPeriod, entrepreneur, period);
@@ -650,7 +636,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                                         const hasRealData = aiReport.incomeStatement &&
                                             aiReport.incomeStatement.revenue &&
                                             aiReport.incomeStatement.revenue.length > 0 &&
-                                            parseFloat(aiReport.incomeStatement.netIncome) !== 0;
+                                            parseAmount(aiReport.incomeStatement.netIncome) !== 0;
 
                                         // Fallback Demo Data for "Impress Me" Demo
                                         const demoData = {
@@ -714,12 +700,12 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                                                         <div className="divide-y divide-slate-50">
                                                             <div className="bg-white px-6 py-3 font-serif italic text-xs uppercase text-indigo-900 font-bold border-l-4 border-indigo-500">Operating Revenue</div>
                                                             <div className="px-2 pb-2">
-                                                                <FinancialTable rows={data.incomeStatement.revenue} baseAmount={parseFloat(data.incomeStatement.revenue.find(r => r.isTotal)?.amount.replace(/[^0-9.-]+/g, "") || data.incomeStatement.revenue[0]?.amount.replace(/[^0-9.-]+/g, "")) || 1} />
+                                                                <FinancialTable rows={data.incomeStatement.revenue} baseAmount={parseAmount(data.incomeStatement.revenue.find(r => r.isTotal)?.amount || data.incomeStatement.revenue[0]?.amount) || 1} />
                                                             </div>
 
                                                             <div className="bg-white px-6 py-3 font-serif italic text-xs uppercase text-rose-900 font-bold border-l-4 border-rose-500 mt-2">Operating Expenses</div>
                                                             <div className="px-2 pb-2">
-                                                                <FinancialTable rows={data.incomeStatement.expenses} baseAmount={parseFloat(data.incomeStatement.revenue.find(r => r.isTotal)?.amount.replace(/[^0-9.-]+/g, "") || data.incomeStatement.revenue[0]?.amount.replace(/[^0-9.-]+/g, "")) || 1} isExpense />
+                                                                <FinancialTable rows={data.incomeStatement.expenses} baseAmount={parseAmount(data.incomeStatement.revenue.find(r => r.isTotal)?.amount || data.incomeStatement.revenue[0]?.amount) || 1} isExpense />
                                                             </div>
 
                                                             <div className="px-6 py-6 bg-slate-50/50 flex justify-between items-center mt-2 border-t border-slate-100">
@@ -727,7 +713,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                                                                 <div className="text-right">
                                                                     <span className="text-2xl font-mono font-black block leading-none text-emerald-600">{data.incomeStatement.netIncome}</span>
                                                                     <span className="text-[9px] text-slate-400 font-bold block mt-1 tracking-widest uppercase">
-                                                                        {((parseFloat(data.incomeStatement.netIncome.replace(/[^0-9.-]+/g, "")) / (parseFloat(data.incomeStatement.revenue.find(r => r.isTotal)?.amount.replace(/[^0-9.-]+/g, "") || data.incomeStatement.revenue[0]?.amount.replace(/[^0-9.-]+/g, "")) || 1)) * 100).toFixed(1)}% Margin
+                                                                        {((parseAmount(data.incomeStatement.netIncome) / (parseAmount(data.incomeStatement.revenue.find(r => r.isTotal)?.amount || data.incomeStatement.revenue[0]?.amount) || 1)) * 100).toFixed(1)}% Margin
                                                                     </span>
                                                                 </div>
                                                             </div>
@@ -743,7 +729,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                                                             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-blue-600"></div>
                                                             <h4 className="px-6 py-4 bg-slate-50/50 text-[9px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100 flex items-center justify-between">Assets <i className="fas fa-building text-blue-500"></i></h4>
                                                             <div className="p-2 flex-1">
-                                                                <FinancialTable rows={data.balanceSheet.assets} baseAmount={parseFloat(data.balanceSheet.totalAssets.replace(/[^0-9.-]+/g, "")) || 1} />
+                                                                <FinancialTable rows={data.balanceSheet.assets} baseAmount={parseAmount(data.balanceSheet.totalAssets) || 1} />
                                                             </div>
                                                             <div className="flex justify-between items-center px-6 py-4 bg-slate-50/50 border-t border-slate-100 mt-2">
                                                                 <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Total Assets</span>
@@ -754,7 +740,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                                                             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-400 to-indigo-600"></div>
                                                             <h4 className="px-6 py-4 bg-slate-50/50 text-[9px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100 flex items-center justify-between">Liabilities & Equity <i className="fas fa-scale-balanced text-purple-500"></i></h4>
                                                             <div className="p-2 flex-1">
-                                                                <FinancialTable rows={[...data.balanceSheet.liabilities, ...data.balanceSheet.equity]} baseAmount={parseFloat(data.balanceSheet.totalLiabilitiesAndEquity.replace(/[^0-9.-]+/g, "")) || 1} />
+                                                                <FinancialTable rows={[...data.balanceSheet.liabilities, ...data.balanceSheet.equity]} baseAmount={parseAmount(data.balanceSheet.totalLiabilitiesAndEquity) || 1} />
                                                             </div>
                                                             <div className="flex justify-between items-center px-6 py-4 bg-slate-50/50 border-t border-slate-100 mt-2">
                                                                 <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Total L&E</span>
@@ -785,7 +771,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                                     </header>
 
                                     {(() => {
-                                        const metrics = (aiReport as any).cfoMetrics || {
+                                        const metrics = aiReport.cfoMetrics || {
                                             dupont: { roe: 24.5, netProfitMargin: 15.2, assetTurnover: 0.8, equityMultiplier: 2.0 },
                                             breakEven: { breakEvenRevenue: 45000, marginOfSafety: 35.8 },
                                             workingCapitalCycle: { cashConversionCycle: 14.2, daysSalesOutstanding: 22, daysPayableOutstanding: 35 }

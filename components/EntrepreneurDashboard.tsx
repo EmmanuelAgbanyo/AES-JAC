@@ -13,7 +13,7 @@ import GoalCard from './GoalCard';
 import Modal from './ui/Modal';
 import TransactionForm from './TransactionForm';
 import ClientManager from './ClientManager';
-import { LayoutDashboard, Users, TrendingUp, Package, User, Mail, Phone, Calendar, FileText, Save } from 'lucide-react';
+import { LayoutDashboard, Users, TrendingUp, Package, User, Mail, Phone, Calendar, FileText, Save, Image as ImageIcon } from 'lucide-react';
 import type { Client, InventoryItem, Supplier, InventoryLog } from '../types';
 import InventoryManager from './InventoryManager';
 
@@ -43,17 +43,33 @@ interface EntrepreneurDashboardProps {
     onUpdateEntrepreneur?: (entrepreneur: Entrepreneur) => Promise<void>;
 }
 
-const StatCard = ({ title, value, color, icon }: { title: string, value: string | number, color: string, icon?: ReactNode }) => (
-    <div className={`bg-white dark:bg-dark-secondary p-6 rounded-lg shadow-lg border-l-4 ${color} transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:scale-[1.02] cursor-default`}>
-        <div className="flex items-center justify-between">
-            <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-dark-textSecondary uppercase tracking-wider">{title}</p>
-                <p className="text-3xl font-semibold text-gray-900 dark:text-dark-text">{value}</p>
+const StatCard = ({ title, value, color, icon }: { title: string, value: string | number, color: string, icon?: ReactNode }) => {
+    // Map standard tailwind colors to glassmorphic gradient overlays based on the passed color string
+    let gradientOverlay = 'from-gray-500/10';
+    if (color.includes('success')) gradientOverlay = 'from-green-500/20';
+    if (color.includes('info')) gradientOverlay = 'from-blue-500/20';
+    if (color.includes('aesYellow')) gradientOverlay = 'from-yellow-500/20';
+    if (color.includes('aesBlue')) gradientOverlay = 'from-indigo-500/20';
+    if (color.includes('danger')) gradientOverlay = 'from-red-500/20';
+
+    return (
+        <div className={`relative overflow-hidden bg-white/70 dark:bg-black/40 backdrop-blur-2xl p-6 rounded-3xl shadow-lg border border-white/50 dark:border-white/10 hover:border-white/80 dark:hover:border-white/20 transition-all duration-500 group hover:-translate-y-2 hover:shadow-2xl`}>
+            {/* Subtle Gradient Background Overlay */}
+            <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-gradient-to-br ${gradientOverlay} to-transparent pointer-events-none`}></div>
+            <div className="relative z-10 flex items-center justify-between">
+                <div>
+                    <p className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">{title}</p>
+                    <p className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">{value}</p>
+                </div>
+                {icon && (
+                    <div className="text-4xl opacity-80 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 drop-shadow-md">
+                        {icon}
+                    </div>
+                )}
             </div>
-            {icon && <div className="text-3xl opacity-70 transition-transform duration-500 hover:scale-110">{icon}</div>}
         </div>
-    </div>
-);
+    );
+};
 
 
 const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditTransaction, onSetGoal, userRole, onAddTransaction, clients = [], onAddClient, onUpdateClient, onDeleteClient, inventory = [], onAddInventoryItem, onUpdateInventoryItem, onDeleteInventoryItem, suppliers = [], onAddSupplier, onUpdateSupplier, onDeleteSupplier, inventoryLogs = [], onWriteLog, onUpdateEntrepreneur }: EntrepreneurDashboardProps) => {
@@ -68,6 +84,24 @@ const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditT
     const [autoGeneratePdf, setAutoGeneratePdf] = useState<boolean>(true);
     const [shouldAutoExport, setShouldAutoExport] = useState<boolean>(false);
     const [isAddTransactionModalOpen, setIsAddTransactionModalOpen] = useState(false);
+    const [logoBase64, setLogoBase64] = useState<string | undefined>(entrepreneur?.logoUrl);
+
+    useEffect(() => {
+        if (entrepreneur) {
+            setLogoBase64(entrepreneur.logoUrl);
+        }
+    }, [entrepreneur]);
+
+    const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setLogoBase64(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     const availableMonths = useMemo(() => {
         const months = new Set<string>();
@@ -110,24 +144,30 @@ const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditT
         setReportError(null);
         setAiReport(null);
 
-
         try {
             const relevantTransactions = transactions.filter(t => t.date.startsWith(period));
             setShouldAutoExport(autoGeneratePdf && relevantTransactions.length > 0);
 
-            // Generate deterministic highly-impressive CFO report locally without API dependency
-            const report = generateStandardReport(entrepreneur, period, relevantTransactions);
+            let report: AiReport;
+            try {
+                // Attempt to generate the report using Gemini AI for strategic insights
+                report = await generateAiPoweredReport(relevantTransactions, entrepreneur, period);
+            } catch (aiError) {
+                console.warn("AI generation failed or skipped, falling back to standard deterministic report.", aiError);
+                // Generate deterministic highly-impressive CFO report locally without API dependency
+                report = generateStandardReport(entrepreneur, period, relevantTransactions) as unknown as AiReport;
+            }
 
-            // Adding a small artificial delay to simulate "analysis" for a better UX
+            // Adding a small artificial delay to simulate "analysis" for a better UX when falling back locally
             setTimeout(() => {
-                setAiReport(report as unknown as AiReport);
+                setAiReport(report);
                 setShowReportView(true);
                 setIsReportLoading(false);
             }, 1200);
 
         } catch (err) {
-            console.error("Error generating AI report:", err);
-            setReportError((err as Error).message || "Failed to generate AI report.");
+            console.error("Error generating report:", err);
+            setReportError((err as Error).message || "Failed to generate report.");
             setIsReportLoading(false);
         }
     }, [entrepreneur, periodType, selectedMonth, selectedYear, transactions, autoGeneratePdf]);
@@ -151,6 +191,7 @@ const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditT
             contact: (form.elements.namedItem('contact') as HTMLInputElement).value,
             bio: (form.elements.namedItem('bio') as HTMLTextAreaElement).value,
             startDate: (form.elements.namedItem('startDate') as HTMLInputElement).value,
+            logoUrl: logoBase64,
         };
         
         await onUpdateEntrepreneur(updated);
@@ -296,47 +337,25 @@ const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditT
             )}
 
             {/* Tab Navigation */}
-            <div className="flex space-x-4 border-b border-gray-200 dark:border-dark-border mb-6">
-                <button
-                    onClick={() => setActiveTab('dashboard')}
-                    className={`pb-3 px-4 text-sm font-medium transition-colors duration-200 flex items-center space-x-2 ${activeTab === 'dashboard'
-                        ? 'border-b-2 border-accent-primary text-accent-primary'
-                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                        }`}
-                >
-                    <LayoutDashboard size={18} />
-                    <span>Overview</span>
-                </button>
-                <button
-                    onClick={() => setActiveTab('clients')}
-                    className={`pb-3 px-4 text-sm font-medium transition-colors duration-200 flex items-center space-x-2 ${activeTab === 'clients'
-                        ? 'border-b-2 border-accent-primary text-accent-primary'
-                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                        }`}
-                >
-                    <Users size={18} />
-                    <span>Clients</span>
-                </button>
-                <button
-                    onClick={() => setActiveTab('inventory')}
-                    className={`pb-3 px-4 text-sm font-medium transition-colors duration-200 flex items-center space-x-2 ${activeTab === 'inventory'
-                        ? 'border-b-2 border-accent-primary text-accent-primary'
-                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                        }`}
-                >
-                    <Package size={18} />
-                    <span>Inventory</span>
-                </button>
-                <button
-                    onClick={() => setActiveTab('profile')}
-                    className={`pb-3 px-4 text-sm font-medium transition-colors duration-200 flex items-center space-x-2 ${activeTab === 'profile'
-                        ? 'border-b-2 border-accent-primary text-accent-primary'
-                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                        }`}
-                >
-                    <User size={18} />
-                    <span>Profile</span>
-                </button>
+            <div className="flex space-x-2 bg-white/50 dark:bg-black/30 backdrop-blur-md p-1.5 rounded-2xl shadow-inner border border-white/40 dark:border-white/10 mb-8 max-w-fit mx-auto md:mx-0 relative z-10">
+                {[
+                    { id: 'dashboard', icon: LayoutDashboard, label: 'Overview' },
+                    { id: 'clients', icon: Users, label: 'Clients' },
+                    { id: 'inventory', icon: Package, label: 'Inventory' },
+                    { id: 'profile', icon: User, label: 'Profile' }
+                ].map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id as any)}
+                        className={`px-5 py-2.5 text-sm font-bold rounded-xl transition-all duration-300 flex items-center space-x-2 ${activeTab === tab.id
+                            ? 'bg-gradient-to-r from-aesBlue to-indigo-600 text-white shadow-lg shadow-indigo-500/30 scale-100'
+                            : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/10'
+                            }`}
+                    >
+                        <tab.icon size={18} />
+                        <span>{tab.label}</span>
+                    </button>
+                ))}
             </div>
 
             {activeTab === 'clients' ? (
@@ -445,6 +464,24 @@ const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditT
                                             />
                                         </div>
                                     </div>
+                                    <div className="relative group">
+                                        <label className="block text-xs font-bold text-gray-500 mb-1 ml-1">Business Logo</label>
+                                        <div className="relative flex items-center gap-4 mt-2">
+                                            {logoBase64 ? (
+                                                <img src={logoBase64} alt="Preview" className="w-12 h-12 rounded-xl object-cover ring-2 ring-aesBlue" />
+                                            ) : (
+                                                <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-black/30 flex items-center justify-center shrink-0">
+                                                    <ImageIcon className="text-gray-400" size={20} />
+                                                </div>
+                                            )}
+                                            <input 
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleLogoUpload}
+                                                className="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-aesBlue hover:file:bg-blue-100 dark:file:bg-black/50 dark:file:text-white"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -473,23 +510,30 @@ const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditT
                 </div>
             ) : (
                 <div className="space-y-8 animate-fadeIn">
-                    {/* Header */}
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between space-y-4 md:space-y-0 md:space-x-6 bg-white dark:bg-dark-secondary p-6 rounded-lg shadow-lg">
-                        <div className="flex items-center space-x-6">
-                            <div className="text-6xl bg-aesYellow text-aesBlue w-24 h-24 rounded-full flex items-center justify-center flex-shrink-0 font-bold">
-                                {entrepreneur.name.charAt(0)}
-                            </div>
+                    {/* Header Banner - Glassmorphic */}
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between space-y-4 md:space-y-0 md:space-x-6 bg-white/70 dark:bg-black/40 backdrop-blur-2xl p-8 rounded-[2rem] border border-white/50 dark:border-white/10 shadow-2xl shadow-indigo-500/10 relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-gradient-to-r from-aesBlue/5 to-transparent dark:from-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
+                        <div className="flex items-center space-x-6 relative z-10">
+                            {entrepreneur.logoUrl ? (
+                                <img src={entrepreneur.logoUrl} alt="Logo" className="w-24 h-24 rounded-2xl object-cover shadow-xl shadow-yellow-500/30 ring-4 ring-white/50 dark:ring-black/20 transform group-hover:rotate-3 transition-transform duration-500" />
+                            ) : (
+                                <div className="text-5xl bg-gradient-to-br from-aesYellow to-yellow-600 text-white w-24 h-24 rounded-2xl flex items-center justify-center flex-shrink-0 font-extrabold shadow-xl shadow-yellow-500/30 ring-4 ring-white/50 dark:ring-black/20 transform group-hover:rotate-3 transition-transform duration-500">
+                                    {entrepreneur.name.charAt(0)}
+                                </div>
+                            )}
                             <div className="flex-grow">
-                                <h1 className="text-4xl font-extrabold text-aesBlue">{entrepreneur.name}</h1>
-                                <p className="text-xl text-gray-700 dark:text-dark-text font-semibold">{entrepreneur.businessName}</p>
-                                {entrepreneur.bio && <p className="mt-2 text-gray-600 dark:text-dark-textSecondary italic">"{entrepreneur.bio}"</p>}
+                                <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 tracking-tight">{entrepreneur.name}</h1>
+                                <p className="text-xl text-aesBlue dark:text-blue-400 font-bold mt-1">{entrepreneur.businessName}</p>
+                                {entrepreneur.bio && <p className="mt-2 text-gray-500 dark:text-gray-400 italic">"{entrepreneur.bio}"</p>}
                             </div>
                         </div>
-                        {userRole === 'entrepreneur' && (
-                            <Button variant="success" size="lg" onClick={() => setIsAddTransactionModalOpen(true)}>
-                                + Add Transaction
-                            </Button>
-                        )}
+                        <div className="relative z-10">
+                            {userRole === 'entrepreneur' && (
+                                <button className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-xl shadow-lg shadow-green-500/30 transition-all transform hover:scale-105 font-bold" onClick={() => setIsAddTransactionModalOpen(true)}>
+                                    + Add Transaction
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     {/* Stat Cards */}
@@ -501,19 +545,21 @@ const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditT
                     </div>
 
                     {/* Goals Section */}
-                    <div className="bg-white dark:bg-dark-secondary p-6 rounded-lg shadow-lg">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl font-semibold text-gray-700 dark:text-dark-text">Goals & Milestones</h3>
-                            <Button variant="primary" size="sm" onClick={() => onSetGoal(entrepreneur)}>Set New Goal</Button>
+                    <div className="bg-white/70 dark:bg-black/40 backdrop-blur-2xl p-8 rounded-[2rem] border border-white/50 dark:border-white/10 shadow-xl transition-colors duration-500 hover:border-white/80 dark:hover:border-white/20">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Goals & Milestones</h3>
+                            <button className="bg-aesBlue/10 text-aesBlue hover:bg-aesBlue hover:text-white transition-colors duration-300 px-4 py-2 rounded-xl font-bold text-sm" onClick={() => onSetGoal(entrepreneur)}>Set New Goal</button>
                         </div>
                         {entrepreneur.goals && entrepreneur.goals.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {entrepreneur.goals.map(goal => (
                                     <GoalCard key={goal.id} goal={goal} currentValue={calculateGoalProgress(goal)} />
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-gray-500 dark:text-dark-textSecondary italic">No goals set yet. Click "Set New Goal" to get started.</p>
+                            <div className="bg-white/50 dark:bg-white/5 border border-dashed border-gray-300 dark:border-white/20 rounded-2xl p-8 text-center">
+                                <p className="text-gray-500 dark:text-gray-400 italic font-medium">No goals set yet. Click "Set New Goal" to get started.</p>
+                            </div>
                         )}
                     </div>
 
@@ -587,68 +633,88 @@ const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditT
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div className="lg:col-span-2 space-y-8">
                             {/* Chart */}
-                            <div className="bg-white dark:bg-dark-secondary p-6 rounded-lg shadow-lg">
-                                <h3 className="text-xl font-semibold text-gray-700 dark:text-dark-text mb-4">Monthly Performance (Last 12 Months)</h3>
+                            <div className="bg-white/70 dark:bg-black/40 backdrop-blur-2xl p-8 rounded-[2rem] border border-white/50 dark:border-white/10 shadow-xl transition-colors duration-500 hover:border-white/80 dark:hover:border-white/20">
+                                <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight mb-6">Monthly Performance</h3>
                                 {chartData.length > 0 ? (
-                                    <ResponsiveContainer width="100%" height={300}>
+                                    <ResponsiveContainer width="100%" height={320}>
                                         <BarChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-                                            <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
-                                            <XAxis dataKey="name" tick={{ fill: '#8b949e' }} />
-                                            <YAxis tick={{ fill: '#8b949e' }} />
-                                            <Tooltip contentStyle={{ backgroundColor: '#161b22', border: '1px solid #30363d' }} />
-                                            <Legend wrapperStyle={{ color: '#e6edf3' }} />
-                                            <Bar dataKey="Income" fill="#28a745" />
-                                            <Bar dataKey="Expenses" fill="#dc3545" />
+                                            <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} vertical={false} />
+                                            <XAxis dataKey="name" tick={{ fill: '#8b949e', fontSize: 12, fontWeight: 600 }} axisLine={false} tickLine={false} />
+                                            <YAxis tick={{ fill: '#8b949e', fontSize: 12, fontWeight: 600 }} axisLine={false} tickLine={false} />
+                                            <Tooltip cursor={{ fill: 'rgba(255,255,255,0.1)' }} contentStyle={{ backgroundColor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(10px)', borderRadius: '1rem', border: '1px solid rgba(255,255,255,0.5)', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }} />
+                                            <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                                            <Bar dataKey="Income" fill="url(#colorIncome)" radius={[4, 4, 0, 0]} />
+                                            <Bar dataKey="Expenses" fill="url(#colorExpense)" radius={[4, 4, 0, 0]} />
+                                            <defs>
+                                                <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.9} />
+                                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.4} />
+                                                </linearGradient>
+                                                <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.9} />
+                                                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0.4} />
+                                                </linearGradient>
+                                            </defs>
                                         </BarChart>
                                     </ResponsiveContainer>
-                                ) : <p className="text-gray-500 dark:text-dark-textSecondary">Not enough data for a monthly chart.</p>}
+                                ) : <p className="text-gray-500 dark:text-gray-400 italic">Not enough data for a monthly chart.</p>}
                             </div>
                             {/* Recent Transactions */}
-                            <div className="bg-white dark:bg-dark-secondary p-6 rounded-lg shadow-lg transition-shadow duration-300 hover:shadow-xl">
-                                <h3 className="text-xl font-semibold text-gray-700 dark:text-dark-text mb-4">Recent Transactions</h3>
+                            <div className="bg-white/70 dark:bg-black/40 backdrop-blur-2xl p-8 rounded-[2rem] border border-white/50 dark:border-white/10 shadow-xl transition-colors duration-500 hover:border-white/80 dark:hover:border-white/20">
+                                <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight mb-6">Recent Transactions</h3>
                                 {recentTransactions.length > 0 ? (
-                                    <ul className="divide-y divide-gray-200 dark:divide-dark-border">
+                                    <ul className="space-y-3">
                                         {recentTransactions.map(t => (
-                                            <li key={t.id} className="py-3 flex justify-between items-start">
+                                            <li key={t.id} className="p-4 bg-white/50 dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-2xl flex justify-between items-center hover:bg-white/80 dark:hover:bg-white/10 transition-all hover:shadow-md hover:-translate-y-0.5 group">
                                                 <div className="flex-grow">
-                                                    <p className="font-medium text-gray-800 dark:text-dark-text">{t.description}</p>
-                                                    <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-dark-textSecondary">
-                                                        <span>{new Date(t.date).toLocaleDateString()}</span>
+                                                    <p className="font-bold text-gray-900 dark:text-white text-lg">{t.description}</p>
+                                                    <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                                        <span className="font-medium bg-gray-100 dark:bg-black/30 px-2 py-0.5 rounded-md">{new Date(t.date).toLocaleDateString()}</span>
                                                         <span>&bull;</span>
-                                                        <span className={`font-semibold ${t.type === TransactionType.INCOME ? 'text-green-600' : 'text-red-600'}`}>
+                                                        <span className={`font-bold px-2 py-0.5 rounded-md ${t.type === TransactionType.INCOME ? 'bg-green-100/50 text-green-700' : 'bg-red-100/50 text-red-700'}`}>
                                                             {t.type}
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <div className="text-right flex-shrink-0 ml-4">
-                                                    <p className={`font-semibold text-lg ${t.type === TransactionType.INCOME ? 'text-green-600' : 'text-red-600'}`}>
-                                                        {t.type === TransactionType.INCOME ? '+' : '-'}GHS {t.amount.toFixed(2)}
+                                                <div className="text-right flex-shrink-0 ml-4 flex flex-col items-end">
+                                                    <p className={`font-extrabold text-xl ${t.type === TransactionType.INCOME ? 'text-green-600' : 'text-red-600'}`}>
+                                                        {t.type === TransactionType.INCOME ? '+' : '-'}GHS {t.amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                                                     </p>
-                                                    <Button variant="info" size="sm" onClick={() => onEditTransaction(t)} className="mt-1">Edit</Button>
+                                                    <button onClick={() => onEditTransaction(t)} className="mt-2 text-xs font-bold text-aesBlue hover:text-indigo-700 transition-colors bg-blue-50/50 dark:bg-white/5 px-3 py-1.5 rounded-lg hover:bg-blue-100/50 border border-blue-100 dark:border-white/5 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0">Edit</button>
                                                 </div>
                                             </li>
                                         ))}
                                     </ul>
-                                ) : <p className="text-gray-500 dark:text-dark-textSecondary">No transactions recorded yet.</p>}
+                                ) : <p className="text-gray-500 dark:text-gray-400 italic">No transactions recorded yet.</p>}
                             </div>
                         </div>
 
                         {/* Customer List */}
-                        <div className="bg-white dark:bg-dark-secondary p-6 rounded-lg shadow-lg transition-shadow duration-300 hover:shadow-xl">
-                            <h3 className="text-xl font-semibold text-gray-700 dark:text-dark-text mb-4">Top Customers</h3>
+                        <div className="bg-white/70 dark:bg-black/40 backdrop-blur-2xl p-8 rounded-[2rem] border border-white/50 dark:border-white/10 shadow-xl transition-colors duration-500 hover:border-white/80 dark:hover:border-white/20">
+                            <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight mb-6">Top Customers</h3>
                             {customerList.length > 0 ? (
-                                <div className="overflow-y-auto max-h-[600px]">
-                                    <ul className="divide-y divide-gray-200 dark:divide-dark-border">
-                                        {customerList.map(c => (
-                                            <li key={c.name} className="py-3">
-                                                <p className="font-semibold text-primary">{c.name}</p>
-                                                <p className="text-sm text-gray-600 dark:text-dark-textSecondary">Total Spent: <span className="font-medium text-black dark:text-dark-text">GHS {c.totalSpent.toFixed(2)}</span></p>
-                                                <p className="text-sm text-gray-500 dark:text-dark-textSecondary">{c.transactionCount} purchase(s) &bull; Last: {new Date(c.lastPurchase).toLocaleDateString()}</p>
+                                <div className="overflow-y-auto pr-2 custom-scrollbar" style={{ maxHeight: '600px' }}>
+                                    <ul className="space-y-3">
+                                        {customerList.map((c, idx) => (
+                                            <li key={c.name} className="p-4 bg-white/50 dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-2xl flex items-center hover:bg-white/80 dark:hover:bg-white/10 transition-all hover:shadow-md hover:-translate-y-0.5 group relative overflow-hidden">
+                                                <div className={`absolute left-0 top-0 bottom-0 w-1 ${idx === 0 ? 'bg-yellow-400' : idx === 1 ? 'bg-slate-300' : idx === 2 ? 'bg-amber-600' : 'bg-transparent'}`}></div>
+                                                <div className="w-10 h-10 rounded-xl bg-aesBlue/10 text-aesBlue flex items-center justify-center font-bold text-lg mr-4 shrink-0">
+                                                    {c.name.charAt(0)}
+                                                </div>
+                                                <div className="flex-grow">
+                                                    <p className="font-extrabold text-gray-900 dark:text-white">{c.name}</p>
+                                                    <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{c.transactionCount} purchase(s) &bull; {new Date(c.lastPurchase).toLocaleDateString()}</p>
+                                                </div>
+                                                <div className="text-right shrink-0">
+                                                    <p className="font-bold text-aesBlue bg-blue-50 dark:bg-white/5 px-2.5 py-1 rounded-xl shadow-sm border border-blue-100 dark:border-white/5">
+                                                        GHS {c.totalSpent.toLocaleString()}
+                                                    </p>
+                                                </div>
                                             </li>
                                         ))}
                                     </ul>
                                 </div>
-                            ) : <p className="text-gray-500 dark:text-dark-textSecondary">No customers with recorded names yet.</p>}
+                            ) : <p className="text-gray-500 dark:text-gray-400 italic">No customers with recorded names yet.</p>}
                         </div>
                     </div>
                 </div>

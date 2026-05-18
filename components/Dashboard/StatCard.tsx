@@ -73,18 +73,18 @@ const StatCard = ({ title, value, previousValue, formatAs = 'number', isExpense 
     };
 
     return (
-        <div className="relative overflow-hidden bg-white/60 dark:bg-black/20 backdrop-blur-2xl p-6 rounded-3xl shadow-xl border border-white/40 dark:border-white/5 hover:border-white/60 transition-all duration-300 group hover:-translate-y-1 hover:shadow-2xl hover:shadow-aesBlue/10">
+        <div className="relative overflow-hidden bg-white/70 dark:bg-black/40 backdrop-blur-2xl p-6 rounded-3xl shadow-lg border border-white/50 dark:border-white/10 hover:border-white/80 dark:hover:border-white/20 transition-all duration-500 group hover:-translate-y-2 hover:shadow-2xl hover:shadow-aesBlue/20">
             {/* Subtle Gradient Background Overlay */}
-            <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br ${isExpense ? 'from-red-500/5 to-transparent' : 'from-aesBlue/5 to-transparent'} pointer-events-none`}></div>
+            <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-gradient-to-br ${isExpense ? 'from-red-500/10 to-transparent' : 'from-aesBlue/10 to-transparent'} pointer-events-none`}></div>
 
             <div className="relative z-10 flex justify-between items-start mb-4">
-                <div className={`p-3.5 rounded-2xl shadow-sm ${iconBg} ${iconColor} transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 ring-1 ring-inset ring-black/5 dark:ring-white/10`}>
+                <div className={`p-3.5 rounded-2xl shadow-sm ${iconBg} ${iconColor} transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 ring-1 ring-inset ring-black/5 dark:ring-white/10`}>
                     <Icon className="w-7 h-7" />
                 </div>
                 {!isNaN(percentageChange) && Math.abs(percentageChange) > 0 && Math.abs(percentageChange) !== Infinity && (
-                    <div className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold border ${isExpense
-                        ? (isNegative ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200')
-                        : (isPositive ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200')
+                    <div className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold border backdrop-blur-sm ${isExpense
+                        ? (isNegative ? 'bg-green-100/80 text-green-700 border-green-200/50' : 'bg-red-100/80 text-red-700 border-red-200/50')
+                        : (isPositive ? 'bg-green-100/80 text-green-700 border-green-200/50' : 'bg-red-100/80 text-red-700 border-red-200/50')
                         }`}>
                         {getTrendIcon()}
                         <span>{Math.abs(percentageChange).toFixed(1)}%</span>
@@ -97,7 +97,7 @@ const StatCard = ({ title, value, previousValue, formatAs = 'number', isExpense 
                 <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
                     {formatValue(value)}
                 </h3>
-                <p className="text-xs font-medium text-gray-400 dark:text-gray-500 mt-2 flex items-center gap-1">
+                <p className="text-xs font-medium text-gray-400 dark:text-gray-500 mt-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform translate-y-2 group-hover:translate-y-0">
                     <span className="bg-gray-100 dark:bg-white/10 px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-300">Previous:</span>
                     {formatValue(previousValue)}
                 </p>

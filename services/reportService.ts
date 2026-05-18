@@ -212,7 +212,7 @@ export const generateReportData = (
       marginOfSafety
     },
     workingCapitalCycle: {
-      daysSalesOwing: daysSalesOutstanding, // fix property name mapping
+      daysSalesOutstanding, // fix property name mapping
       daysPayableOutstanding,
       cashConversionCycle
     },
@@ -446,7 +446,7 @@ export const generateStandardReport = (
     strategicRecommendations: [
       {
         recommendation: `Aggressively Dilute Concentration Risk: Currently, ${data.customerConcentration.top3Percentage.toFixed(1)}% of revenue is tied to just 3 entities. Implement immediate outbound market penetration campaigns to acquire net-new accounts.`,
-        priority: data.customerConcentration.riskLevel.toLowerCase() as any
+        priority: data.customerConcentration.riskLevel.toLowerCase() as 'high' | 'medium' | 'low'
       },
       {
         recommendation: `Optimize Receivables Velocity: The effective collection rate stands at ${data.collectionRate.toFixed(1)}%. Institute draconian net-15 payment terms and automate dunning sequences to accelerate cash inflows and de-risk the balance sheet.`,

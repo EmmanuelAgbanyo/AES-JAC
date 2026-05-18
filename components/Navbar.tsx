@@ -136,11 +136,35 @@ const Navbar = ({ currentUser, navigateTo, onLogout, onExport, onImport, onAskAi
 
       {/* Mobile Menu with Glassmorphism */}
       <div
-        className={`md:hidden absolute w-full bg-primary/95 dark:bg-dark-primary/95 backdrop-blur-xl border-t border-white/10 shadow-2xl transition-all duration-300 origin-top overflow-hidden ${isMobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+        className={`md:hidden absolute w-full bg-primary/95 dark:bg-dark-primary/95 backdrop-blur-xl border-t border-white/10 shadow-2xl transition-all duration-300 origin-top overflow-y-auto ${isMobileMenuOpen ? 'max-h-[calc(100vh-4.5rem)] opacity-100' : 'max-h-0 opacity-0'
           }`}
         id="mobile-menu"
       >
-        <div className="px-4 pt-2 pb-6 space-y-2">
+        <div className="px-4 pt-4 pb-6 space-y-2">
+          {currentUser.type === 'system' && (
+            <div className="flex flex-col space-y-1 mb-4">
+              <div className="px-3 text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">Navigation</div>
+              {[
+                { view: AppView.DASHBOARD, label: 'Dashboard', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF] },
+                { view: AppView.ENTREPRENEURS, label: 'Entrepreneurs', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF] },
+                { view: AppView.TRANSACTIONS, label: 'Transactions', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF] },
+                { view: AppView.REPORTS, label: 'Reports', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF] },
+                { view: AppView.GROWTH_HUB, label: 'Growth Hub', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF] },
+                { view: AppView.USER_MANAGEMENT, label: 'User Management', roles: [Role.SUPER_ADMIN] },
+              ]
+                .filter(item => item.roles.includes(currentUser.user.role))
+                .map(item => (
+                  <button
+                    key={item.view}
+                    onClick={() => { navigateTo(item.view); setIsMobileMenuOpen(false); }}
+                    className="text-left px-3 py-2.5 rounded-xl text-base font-medium text-white hover:bg-white/10 transition-colors w-full"
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              <div className="border-t border-white/10 my-3"></div>
+            </div>
+          )}
           {renderNavLinks()}
         </div>
       </div>

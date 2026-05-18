@@ -5,7 +5,7 @@ import { GENAI_MODEL_NAME, TransactionType, PaymentMethod } from '../constants';
 
 const getApiKey = (): string | undefined => {
   try {
-    return process.env.API_KEY;
+    return import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY || (typeof process !== 'undefined' && process.env.API_KEY);
   } catch (e) {
     return undefined;
   }
@@ -44,12 +44,9 @@ export const generateAiPoweredReport = async (
   goals?: Goal[]
 ): Promise<AiReport> => {
   // 1. Generate Deterministic Financials
-  const { generateFinancialStatements } = await import('./reportService');
+  const { generateFinancialStatements, generateReportData } = await import('./reportService');
   const financialData = generateFinancialStatements(transactions, period);
-
-  const apiKey = getApiKey();
-  if (!apiKey) throw new Error("API key not found.");
-  const ai = new GoogleGenAI({ apiKey });
+  const reportData = generateReportData(entrepreneur.id, period, transactions);
 
   const reportSchema = {
     // ... existing schema ...
@@ -114,14 +111,14 @@ export const generateAiPoweredReport = async (
   - Net Margin: ${financialData.kpis.netMargin}
   - Burn Rate: ${financialData.kpis.burnRate}
   - Runway: ${financialData.kpis.runwayMonths}
-  - ROE (Dupont): ${(financialData as any).cfoMetrics.dupont.roe.toFixed(2)}%
-  - Asset Turnover: ${(financialData as any).cfoMetrics.dupont.assetTurnover.toFixed(2)}x
-  - Equity Multiplier: ${(financialData as any).cfoMetrics.dupont.equityMultiplier.toFixed(2)}x
-  - Break-Even Revenue: ${(financialData as any).cfoMetrics.breakEven.breakEvenRevenue.toFixed(2)}
-  - Margin of Safety: ${(financialData as any).cfoMetrics.breakEven.marginOfSafety.toFixed(2)}%
-  - Cash Conversion Cycle: ${(financialData as any).cfoMetrics.workingCapitalCycle.cashConversionCycle.toFixed(1)} days
-  - DSCR (Debt Service): ${(financialData as any).cfoMetrics.creditReadiness.dscr.toFixed(2)}x
-  - Implied Valuation: ${(financialData as any).cfoMetrics.creditReadiness.impliedValuation.toLocaleString()}
+  - ROE (Dupont): ${reportData.cfoMetrics.dupont.roe.toFixed(2)}%
+  - Asset Turnover: ${reportData.cfoMetrics.dupont.assetTurnover.toFixed(2)}x
+  - Equity Multiplier: ${reportData.cfoMetrics.dupont.equityMultiplier.toFixed(2)}x
+  - Break-Even Revenue: ${reportData.cfoMetrics.breakEven.breakEvenRevenue.toFixed(2)}
+  - Margin of Safety: ${reportData.cfoMetrics.breakEven.marginOfSafety.toFixed(2)}%
+  - Cash Conversion Cycle: ${reportData.cfoMetrics.workingCapitalCycle.cashConversionCycle.toFixed(1)} days
+  - DSCR (Debt Service): ${reportData.cfoMetrics.creditReadiness.dscr.toFixed(2)}x
+  - Implied Valuation: ${reportData.cfoMetrics.creditReadiness.impliedValuation.toLocaleString()}
   
   Mandatory Reporting Logic:
   1. Cash Flow: Use the Indirect Method. Reconcile Net Income back to Cash.
@@ -130,28 +127,60 @@ export const generateAiPoweredReport = async (
   4. Venture & Credit Pitch: Act as an Investment Banker preparing a pitch deck. Provide an "investmentThesis" based on traction, define "theAskAndUseOfFunds" based on the projected shortfall or growth capital needed, and outline "riskMitigation" for credit officers.
   5. Tone: Ruthlessly objective, analytical, action-oriented corporate auditor and elite VC advisor style.
   
-  Formatting:
-  - Positives: regular string values.
-  - Negatives: format in parentheses like (1,234.56).
-  
-  Return a structured JSON following the schema.`;
+  Return a structured JSON following the schema. Do not include markdown formatting like \`\`\`json. Return strictly the raw JSON.`;
 
-  const response = await ai.models.generateContent({
-    model: GENAI_MODEL_NAME,
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: reportSchema,
-      temperature: 0.1,
-      maxOutputTokens: 8192
+  let aiData;
+  const apiKey = getApiKey();
+
+  if (apiKey) {
+    try {
+      const ai = new GoogleGenAI({ apiKey });
+      const response = await ai.models.generateContent({
+        model: GENAI_MODEL_NAME,
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: reportSchema,
+          temperature: 0.1,
+          maxOutputTokens: 8192
+        }
+      });
+      const text = response.text || "{}";
+      const cleanText = text.replace(/```json\s*|\s*```/g, "").replace(/```/g, "").trim();
+      aiData = JSON.parse(cleanText);
+    } catch (err) {
+      console.warn("Gemini AI failed, preparing to fall back to puter.js", err);
     }
-  });
+  }
+
+  if (!aiData) {
+    try {
+        const { puter } = await import('@heyputer/puter.js');
+        const puterResponse = await puter.ai.chat(prompt + "\n\nRETURN ONLY RAW, VALID JSON matching the required schema. NO TEXT OR MARKDOWN OUTSIDE THE JSON.");
+        const text = typeof puterResponse === 'string' ? puterResponse : puterResponse?.message?.content || puterResponse?.text || puterResponse?.toString() || "{}";
+        const cleanText = text.replace(/```json\s*|\s*```/g, "").replace(/```/g, "").trim();
+        try {
+            aiData = JSON.parse(cleanText);
+        } catch (e) {
+            throw new Error(`Parse failed. text: ${text.substring(0, 50)}... type: ${typeof puterResponse}, keys: ${typeof puterResponse === 'object' ? Object.keys(puterResponse).join(',') : ''}`);
+        }
+    } catch (err) {
+        console.error("Puter AI fallback failed:", err);
+        // Return a mock AI object so the UI displays the error instead of falling back to the standard report immediately
+        aiData = {
+          reportTitle: "Puter AI Fallback Error",
+          executiveSummary: "Error from Puter.js: " + (err instanceof Error ? err.message : JSON.stringify(err)),
+          period: period,
+          cashFlowStatement: { operating: [], investing: [], financing: [], netCashChange: "0", closingCash: "0" },
+          forecast: { projectedRevenue: "0", projectedOpEx: "0", assumptions: [] },
+          strategicRecommendations: [{ recommendation: "Debug Puter JS", priority: "High" }],
+          advancedCfoCommentary: { dupontAnalysis: "", breakEvenAnalysis: "", efficiencyMetrics: "" },
+          venturePitch: { investmentThesis: "", theAskAndUseOfFunds: "", riskMitigation: "" }
+        };
+    }
+  }
 
   try {
-    const text = response.text || "{}";
-    const cleanText = text.replace(/```json\s*|\s*```/g, "").replace(/```/g, "").trim();
-    const aiData = JSON.parse(cleanText);
-
     // Merge deterministic financials and KPIs with AI insights
     // @ts-ignore - bypassing strict typing on the merged object for now, cfoMetrics is guaranteed to exist from reportService
     return {
@@ -159,12 +188,11 @@ export const generateAiPoweredReport = async (
       kpis: financialData.kpis,
       incomeStatement: financialData.incomeStatement,
       balanceSheet: financialData.balanceSheet,
-      cfoMetrics: (financialData as any).cfoMetrics
+      cfoMetrics: reportData.cfoMetrics
     };
 
   } catch (error) {
     console.error("Failed to parse AI report JSON:", error);
-    console.log("Raw response text:", response.text);
     throw new Error("Failed to generate complete report. The AI response was truncated or malformed.");
   }
 };
