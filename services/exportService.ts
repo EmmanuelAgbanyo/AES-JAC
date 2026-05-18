@@ -68,7 +68,6 @@ export const exportToXlsx = async (aiReport: AiReport, transactions: Transaction
         aiReport.incomeStatement.revenue.forEach(item => incomeData.push([item.label, item.amount]));
         aiReport.incomeStatement.expenses.forEach(item => incomeData.push([item.label, item.amount]));
         incomeData.push(["Tax Provision", aiReport.incomeStatement.taxProvision]);
-        // Fix: netIncome is a string
         incomeData.push(["Net Income", aiReport.incomeStatement.netIncome]);
         const incomeWs = XLSX.utils.aoa_to_sheet(incomeData);
         XLSX.utils.book_append_sheet(wb, incomeWs, "Income Statement");
@@ -135,7 +134,6 @@ export const exportToDocx = async (aiReport: AiReport, entrepreneur: Entrepreneu
                         ...aiReport.incomeStatement.revenue.map(item => new TableRow({ children: [ new TableCell({ children: [new Paragraph(item.label)]}), new TableCell({ children: [new Paragraph(item.amount)]}) ]})),
                         ...aiReport.incomeStatement.expenses.map(item => new TableRow({ children: [ new TableCell({ children: [new Paragraph(item.label)]}), new TableCell({ children: [new Paragraph(item.amount)]}) ]})),
                         new TableRow({ children: [ new TableCell({ children: [new Paragraph("Tax Provision")]}), new TableCell({ children: [new Paragraph(aiReport.incomeStatement.taxProvision)]}) ]}),
-                        // Fix: netIncome is a string
                         new TableRow({ children: [ new TableCell({ children: [new Paragraph({children: [new TextRun({text: "Net Income", bold: true})]})]}) , new TableCell({ children: [new Paragraph({children: [new TextRun({text: aiReport.incomeStatement.netIncome, bold: true})]})]}) ]})
                     ]
                 }) : createNormalText(""),
