@@ -867,7 +867,7 @@ const AppContent = () => {
                 currentUser={currentUser}
               />
             )}
-            <main className={`flex-grow flex justify-center main-content overflow-y-auto ${currentUser.type === 'system' && isSidebarOpen ? 'ml-64' : ''} transition-all duration-300`}>
+            <main className="flex-grow flex justify-center main-content overflow-y-auto transition-all duration-300">
               {renderContent()}
             </main>
           </div>
