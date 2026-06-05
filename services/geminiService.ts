@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 
 import { GoogleGenAI, GenerateContentResponse, Type, FunctionDeclaration, Tool } from "@google/genai";
 import type { Transaction, AiReport, Entrepreneur, GrowthPlan, ContractData, DashboardInsight, ChatMessage, Resource, SuggestedResource, Goal, PartialTransaction } from '../types';
@@ -157,7 +158,7 @@ export const generateAiPoweredReport = async (
     try {
         const { puter } = await import('@heyputer/puter.js');
         const puterResponse = await puter.ai.chat(prompt + "\n\nRETURN ONLY RAW, VALID JSON matching the required schema. NO TEXT OR MARKDOWN OUTSIDE THE JSON.");
-        const text = typeof puterResponse === 'string' ? puterResponse : puterResponse?.message?.content || puterResponse?.text || puterResponse?.toString() || "{}";
+        const text = typeof puterResponse === 'string' ? puterResponse : puterResponse?.message?.content || (puterResponse as any)?.text || puterResponse?.toString() || "{}";
         const cleanText = text.replace(/```json\s*|\s*```/g, "").replace(/```/g, "").trim();
         try {
             aiData = JSON.parse(cleanText);

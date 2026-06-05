@@ -14,7 +14,7 @@ interface ClientManagerProps {
     entrepreneurId: string;
 }
 
-const GlassCard: React.FC<{ children: React.ReactNode, className?: string }> = ({ children, className = '' }) => (
+const GlassCard: React.FC<{ children: React.ReactNode, className?: string, key?: React.Key }> = ({ children, className = '' }) => (
     <div className={`bg-white/40 dark:bg-gray-900/40 backdrop-blur-md border border-white/20 dark:border-white/10 shadow-xl rounded-2xl overflow-hidden ${className}`}>
         {children}
     </div>

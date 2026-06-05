@@ -43,9 +43,9 @@ const UserForm = ({ onSubmit, onCancel, initialData }: { onSubmit: (user: User) 
         } as User);
     };
 
-    const roleOptions: { value: Role, label: string }[] = Object.values(Role)
+    const roleOptions: { value: Role, label: string }[] = (Object.values(Role) as Role[])
         .filter(role => role !== Role.SUPER_ADMIN) // Cannot create other super admins
-        .map(role => ({ value: role, label: role }));
+        .map(role => ({ value: role as Role, label: role as string }));
 
     if (isEditingSuperAdmin) {
         roleOptions.unshift({ value: Role.SUPER_ADMIN, label: Role.SUPER_ADMIN });

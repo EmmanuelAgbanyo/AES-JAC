@@ -728,7 +728,8 @@ const AppContent = () => {
         onEditTransaction={handleOpenEditTransaction}
         onSetGoal={() => handleOpenGoalModal(currentUser.user)}
         userRole='entrepreneur'
-        onAddTransaction={writeTransaction}
+        onAddTransaction={handleWriteTransaction}
+        onUpdateTransaction={handleWriteTransaction}
         clients={clients.filter(c => c.entrepreneurId === currentUser.user.id)}
         onAddClient={handleAddOrUpdateClient}
         onUpdateClient={handleAddOrUpdateClient}
@@ -737,6 +738,9 @@ const AppContent = () => {
         onAddInventoryItem={handleWriteInventoryItem}
         onUpdateInventoryItem={handleWriteInventoryItem}
         onDeleteInventoryItem={handleDeleteInventoryItem}
+        suppliers={suppliers}
+        onAddSupplier={handleWriteSupplier}
+        onUpdateSupplier={handleWriteSupplier}
         onDeleteSupplier={handleDeleteSupplier}
         inventoryLogs={inventoryLogs}
         onWriteLog={writeInventoryLog}

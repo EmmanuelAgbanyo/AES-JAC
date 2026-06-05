@@ -2,6 +2,20 @@ import { ref, onValue, set, remove, update, type Unsubscribe } from "firebase/da
 import { db } from './firebaseService';
 import type { Entrepreneur, Transaction, User, InventoryItem } from '../types';
 
+// Utility to recursively remove undefined properties before saving to Firebase
+// Firebase RTDB throws an error if an object contains undefined values.
+const removeUndefinedProperties = <T extends Record<string, any>>(obj: T): T => {
+    const newObj = { ...obj };
+    Object.keys(newObj).forEach(key => {
+        if (newObj[key] === undefined) {
+            delete newObj[key];
+        } else if (typeof newObj[key] === 'object' && newObj[key] !== null && !Array.isArray(newObj[key]) && !(newObj[key] instanceof Date)) {
+            newObj[key as keyof T] = removeUndefinedProperties(newObj[key]);
+        }
+    });
+    return newObj;
+};
+
 const ENTREPRENEURS_KEY = 'entrepreneurs';
 const TRANSACTIONS_KEY = 'transactions';
 const USERS_KEY = 'users';
@@ -42,7 +56,7 @@ export const listenToInventory = (callback: (data: any[]) => void): Unsubscribe 
 
 // --- WRITERS (for individual items) ---
 export const writeEntrepreneur = (entrepreneur: Entrepreneur): Promise<void> => {
-    return set(ref(db, `${ENTREPRENEURS_KEY}/${entrepreneur.id}`), entrepreneur);
+    return set(ref(db, `${ENTREPRENEURS_KEY}/${entrepreneur.id}`), removeUndefinedProperties(entrepreneur));
 };
 
 export const deleteEntrepreneur = (id: string): Promise<void> => {
@@ -50,7 +64,7 @@ export const deleteEntrepreneur = (id: string): Promise<void> => {
 };
 
 export const writeTransaction = (transaction: Transaction): Promise<void> => {
-    return set(ref(db, `${TRANSACTIONS_KEY}/${transaction.id}`), transaction);
+    return set(ref(db, `${TRANSACTIONS_KEY}/${transaction.id}`), removeUndefinedProperties(transaction));
 };
 
 export const deleteTransaction = (id: string): Promise<void> => {
@@ -58,7 +72,7 @@ export const deleteTransaction = (id: string): Promise<void> => {
 };
 
 export const writeUser = (user: User): Promise<void> => {
-    return set(ref(db, `${USERS_KEY}/${user.id}`), user);
+    return set(ref(db, `${USERS_KEY}/${user.id}`), removeUndefinedProperties(user));
 };
 
 export const deleteUser = (id: string): Promise<void> => {
@@ -66,14 +80,14 @@ export const deleteUser = (id: string): Promise<void> => {
 };
 
 export const writeClient = (client: any): Promise<void> => {
-    return set(ref(db, `${CLIENTS_KEY}/${client.id}`), client);
+    return set(ref(db, `${CLIENTS_KEY}/${client.id}`), removeUndefinedProperties(client));
 };
 
 export const deleteClient = (id: string): Promise<void> => {
     return remove(ref(db, `${CLIENTS_KEY}/${id}`));
 };
 
-export const writeInventoryItem = (item: InventoryItem): Promise<void> => set(ref(db, `${INVENTORY_KEY}/${item.id}`), item);
+export const writeInventoryItem = (item: InventoryItem): Promise<void> => set(ref(db, `${INVENTORY_KEY}/${item.id}`), removeUndefinedProperties(item));
 export const deleteInventoryItem = (id: string): Promise<void> => remove(ref(db, `${INVENTORY_KEY}/${id}`));
 
 export const listenToInventoryLogs = (callback: (logs: any[]) => void): Unsubscribe => {
@@ -91,7 +105,7 @@ export const listenToInventoryLogs = (callback: (logs: any[]) => void): Unsubscr
     });
 };
 
-export const writeInventoryLog = (log: any): Promise<void> => set(ref(db, `${INVENTORY_LOGS_KEY}/${log.id}`), log);
+export const writeInventoryLog = (log: any): Promise<void> => set(ref(db, `${INVENTORY_LOGS_KEY}/${log.id}`), removeUndefinedProperties(log));
 
 export const listenToSuppliers = (callback: (suppliers: any[]) => void): Unsubscribe => {
     return onValue(suppliersRef, (snapshot) => {
@@ -108,7 +122,7 @@ export const listenToSuppliers = (callback: (suppliers: any[]) => void): Unsubsc
     });
 };
 
-export const writeSupplier = (supplier: any): Promise<void> => set(ref(db, `${SUPPLIERS_KEY}/${supplier.id}`), supplier);
+export const writeSupplier = (supplier: any): Promise<void> => set(ref(db, `${SUPPLIERS_KEY}/${supplier.id}`), removeUndefinedProperties(supplier));
 export const deleteSupplier = (id: string): Promise<void> => remove(ref(db, `${SUPPLIERS_KEY}/${id}`));
 
 
