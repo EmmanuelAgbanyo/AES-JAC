@@ -202,7 +202,7 @@ const ReportGenerator = ({ entrepreneurs, transactions }: ReportGeneratorProps) 
           <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 mb-2 tracking-tight">
             Report Center
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Generate professional financial audits and strategic insights.</p>
+          <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Generate professional financial reports and summaries.</p>
         </div>
 
         <div className="flex bg-white/50 dark:bg-white/5 p-1.5 rounded-2xl shadow-inner border border-white/20 dark:border-white/5 backdrop-blur-sm">
@@ -212,7 +212,7 @@ const ReportGenerator = ({ entrepreneurs, transactions }: ReportGeneratorProps) 
               ? 'bg-aesBlue text-white shadow-lg shadow-blue-500/20 scale-100'
               : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-white/40 dark:hover:bg-white/10'}`}
           >
-            <span>✨</span> AI Strategic Audit
+            <span>✨</span> AI Financial Report
           </button>
           <button
             onClick={() => setReportMode('standard')}
@@ -220,7 +220,7 @@ const ReportGenerator = ({ entrepreneurs, transactions }: ReportGeneratorProps) 
               ? 'bg-aesBlue text-white shadow-lg shadow-blue-500/20 scale-100'
               : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-white/40 dark:hover:bg-white/10'}`}
           >
-            <span>📊</span> Standard Data Report
+            <span>📊</span> Standard Financial Report
           </button>
         </div>
       </div>
@@ -311,7 +311,7 @@ const ReportGenerator = ({ entrepreneurs, transactions }: ReportGeneratorProps) 
             disabled={!selectedEntrepreneurId}
             className="w-full md:w-auto shadow-xl shadow-aesBlue/20 hover:shadow-aesBlue/30 text-white font-bold py-3 px-8 rounded-xl bg-gradient-to-r from-aesBlue to-blue-600 border-0"
           >
-            {isLoading ? 'Generating...' : `Generate ${reportMode === 'ai' ? 'AI Strategic' : 'Standard'} Audit`}
+            {isLoading ? 'Generating...' : `Generate ${reportMode === 'ai' ? 'AI Financial' : 'Standard'} Report`}
           </Button>
         </div>
 

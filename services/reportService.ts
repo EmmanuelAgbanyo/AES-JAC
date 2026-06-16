@@ -246,38 +246,35 @@ export const generateReportData = (
 };
 
 export const generateDynamicSummary = (data: ReportData, entrepreneurName: string, period: string): string => {
-  const profitable = data.netIncome > 0;
-  const topSource = data.incomeByCategory[0]?.category || "Core Operations";
+  const profitable = data.netIncome >= 0;
+  const topSource = data.incomeByCategory[0]?.category || "General Sales";
   const topSourcePct = data.incomeByCategory[0]?.percentage.toFixed(1) || "0.0";
-  const topExpense = data.expenseByCategory[0]?.category || "Overhead";
+  const topExpense = data.expenseByCategory[0]?.category || "General Expenses";
   const topExpensePct = data.expenseByCategory[0]?.percentage.toFixed(1) || "0.0";
 
   const marginPct = data.totalIncome > 0 ? ((data.netIncome / data.totalIncome) * 100).toFixed(1) : "0.0";
 
   let liquidityCommentary = "";
   if (data.liquidity.currentRatio > 2) {
-    liquidityCommentary = "The entity maintains an exceptionally robust liquidity posture, indicating significant capital deployment opportunities or idle cash inefficiencies that warrant strategic review.";
+    liquidityCommentary = "The business maintains a strong liquidity position, indicating an ability to comfortably meet short-term obligations.";
   } else if (data.liquidity.currentRatio > 1) {
-    liquidityCommentary = "Working capital remains firmly within acceptable operational tolerances, ensuring all short-term obligations can be serviced without liquidating core structural assets.";
+    liquidityCommentary = "Working capital is adequate, suggesting the business can cover its immediate operational liabilities.";
   } else {
-    liquidityCommentary = "Current liquidity metrics indicate potential short-term systemic stress. Immediate capital injection or aggressive accounts receivable factoring may be required to stabilize the cash conversion cycle.";
+    liquidityCommentary = "Current liquidity metrics indicate potential constraints in meeting short-term obligations. Monitoring cash flow closely is recommended.";
   }
 
-  return `EXECUTIVE AUDIT SUMMARY - Period: ${period}
+  return `Financial Summary - Period: ${period}
 
-To the Board of Directors and Stakeholders of ${entrepreneurName}:
+To the Management and Stakeholders of ${entrepreneurName}:
 
-This memorandum serves as the definitive financial synthesis for the period ending ${period}. Our comprehensive analysis of the ledger reveals that the entity recognized gross aggregate revenues of GHS ${data.totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })} against operating outflows of GHS ${data.totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2 })}. This operational cadence yielded a consolidated net ${profitable ? "surplus" : "deficit"} of GHS ${Math.abs(data.netIncome).toLocaleString(undefined, { minimumFractionDigits: 2 })}, translating to an effective net margin of ${marginPct}%.
+This report provides a summary of the financial activities for the period ending ${period}. During this timeframe, the business recorded total revenues of GHS ${data.totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })} and total operating expenses of GHS ${data.totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2 })}. This resulted in a net ${profitable ? "income" : "loss"} of GHS ${Math.abs(data.netIncome).toLocaleString(undefined, { minimumFractionDigits: 2 })}, representing a net margin of ${marginPct}%.
 
-STRATEGIC EFFICIENCY (DUPONT DECONSTRUCTION):
-Return on Equity (ROE) stands at ${data.cfoMetrics.dupont.roe.toFixed(1)}%. This is driven by a Net Profit Margin of ${data.cfoMetrics.dupont.netProfitMargin.toFixed(1)}%, an Asset Turnover velocity of ${data.cfoMetrics.dupont.assetTurnover.toFixed(2)}x, and an Equity Multiplier of ${data.cfoMetrics.dupont.equityMultiplier.toFixed(2)}x. Current operations indicate a Break-Even revenue threshold of GHS ${data.cfoMetrics.breakEven.breakEvenRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}, providing a margin of safety of ${data.cfoMetrics.breakEven.marginOfSafety.toFixed(1)}%.
+Operational Overview:
+The primary contributor to revenue was ${topSource}, accounting for ${topSourcePct}% of total income. The largest expense category was ${topExpense}, representing ${topExpensePct}% of total operating outflows. Management is encouraged to review these areas to ensure optimal pricing and cost efficiency.
 
-REVENUE VECTOR & COST CONTAINMENT:
-Top-line growth was disproportionately sustained by ${topSource}, which anchored ${topSourcePct}% of incoming capital velocity. On the expenditure front, ${topExpense} consumed the largest tranche of working capital at ${topExpensePct}%. Management is strongly advised to audit these critical pathways to ensure yield optimization and aggressive cost containment.
-
-RISK & LIQUIDITY EXPOSURE:
+Liquidity and Risk:
 ${liquidityCommentary}
-Furthermore, our forensic review of the client ledger identifies a customer concentration risk assessed at a [${data.customerConcentration.riskLevel.toUpperCase()}] severity tier. The top 3 transacting entities represent ${data.customerConcentration.top3Percentage.toFixed(1)}% of total volume, violating optimal diversification thresholds. Concurrent action to broaden the client acquisition funnel is non-negotiable for long-term enterprise resilience.`;
+Additionally, a review of customer concentration shows that the top 3 customers represent ${data.customerConcentration.top3Percentage.toFixed(1)}% of total revenue. Diversifying the customer base may help mitigate potential revenue risks in the future.`;
 };
 
 export const generateFinancialStatements = (transactions: Transaction[], period: string) => {
@@ -288,11 +285,8 @@ export const generateFinancialStatements = (transactions: Transaction[], period:
   let revenue = incomeTrans.reduce((sum, t) => sum + t.amount, 0);
   let expenses = expenseTrans.reduce((sum, t) => sum + t.amount, 0);
 
-  // DEMO MODE INJECTION: If data is missing/zero, provide "Impress Me" defaults to prevent blank page
-  if (revenue === 0 && expenses === 0) {
-    revenue = 125000.00; // Realistic mid-sized SME monthly revenue
-    expenses = 85400.00;
-  }
+  // Remove demo mode injection
+  // if (revenue === 0 && expenses === 0) { ... }
 
   const netIncome = revenue - expenses;
   const taxRate = 0.25;
@@ -308,9 +302,7 @@ export const generateFinancialStatements = (transactions: Transaction[], period:
 
   if (revenueByCategory.length === 0) {
     revenueByCategory = [
-      { label: 'Corporate Consulting Services', amount: (revenue * 0.45).toFixed(2), isTotal: false, isNegative: false },
-      { label: 'Training Workshops', amount: (revenue * 0.35).toFixed(2), isTotal: false, isNegative: false },
-      { label: 'Licensing Revenue', amount: (revenue * 0.20).toFixed(2), isTotal: false, isNegative: false },
+      { label: 'No Revenue Recorded', amount: '0.00', isTotal: false, isNegative: false }
     ];
   }
 
@@ -322,29 +314,30 @@ export const generateFinancialStatements = (transactions: Transaction[], period:
 
   if (expensesByCategory.length === 0) {
     expensesByCategory = [
-      { label: 'Staff Salaries & Wages', amount: (expenses * 0.50).toFixed(2), isTotal: false, isNegative: false, indent: 1 },
-      { label: 'Operational Overheads', amount: (expenses * 0.20).toFixed(2), isTotal: false, isNegative: false, indent: 1 },
-      { label: 'Marketing & Acquisition', amount: (expenses * 0.15).toFixed(2), isTotal: false, isNegative: false, indent: 1 },
-      { label: 'Software Infrastructure', amount: (expenses * 0.15).toFixed(2), isTotal: false, isNegative: false, indent: 1 },
+      { label: 'No Expenses Recorded', amount: '0.00', isTotal: false, isNegative: false, indent: 1 }
     ];
   }
 
-  // 2. Balance Sheet Logic (Simplified for Demo)
+  // 2. Balance Sheet Logic
   // Assets
-  const cashOnHand = netIncome + 25000; // Assumption: Opening balance + Net Income
-  const receivables = 12500; // Assumption for Demo
+  const cashOnHand = netIncome; // Simplified approach based strictly on tracked flows
+  const receivables = incomeTrans
+    .filter(t => t.paidStatus === PaidStatus.PENDING || t.paidStatus === PaidStatus.PARTIAL)
+    .reduce((sum, t) => sum + t.amount, 0);
   const totalCurrentAssets = cashOnHand + receivables;
-  const fixedAssets = 75000; // Assumption for "Impress Me"
+  const fixedAssets = 0; // Not tracked in current system
   const totalAssets = totalCurrentAssets + fixedAssets;
 
   // Liabilities
-  const accountsPayable = 4500; // Assumption
+  const accountsPayable = expenseTrans
+    .filter(t => t.paidStatus === PaidStatus.PENDING || t.paidStatus === PaidStatus.PARTIAL)
+    .reduce((sum, t) => sum + t.amount, 0);
   const taxPayable = taxProvision;
   const totalLiabilities = accountsPayable + taxPayable;
 
   // Equity
-  const ownersEquity = 75000; // Assumption
-  const retainedEarnings = totalAssets - totalLiabilities - ownersEquity; // Plug to balance
+  const ownersEquity = 0; // Not tracked
+  const retainedEarnings = totalAssets - totalLiabilities - ownersEquity; 
   const totalEquity = ownersEquity + retainedEarnings;
 
   // Balance Check: Assets = Liabs + Equity
@@ -445,19 +438,19 @@ export const generateStandardReport = (
     },
     strategicRecommendations: [
       {
-        recommendation: `Aggressively Dilute Concentration Risk: Currently, ${data.customerConcentration.top3Percentage.toFixed(1)}% of revenue is tied to just 3 entities. Implement immediate outbound market penetration campaigns to acquire net-new accounts.`,
+        recommendation: `Customer Diversification: Currently, ${data.customerConcentration.top3Percentage.toFixed(1)}% of revenue is tied to the top 3 customers. Expanding the customer base is recommended to reduce reliance on a small number of accounts.`,
         priority: data.customerConcentration.riskLevel.toLowerCase() as 'high' | 'medium' | 'low'
       },
       {
-        recommendation: `Optimize Receivables Velocity: The effective collection rate stands at ${data.collectionRate.toFixed(1)}%. Institute draconian net-15 payment terms and automate dunning sequences to accelerate cash inflows and de-risk the balance sheet.`,
+        recommendation: `Receivables Management: The current collection rate is ${data.collectionRate.toFixed(1)}%. Consider reviewing payment terms and following up on outstanding invoices to improve cash inflows.`,
         priority: data.collectionRate < 85 ? 'high' : 'medium'
       },
       {
-        recommendation: `Double-Down on High-Yield Segments: '${data.topSellingItems[0]?.category || 'Primary Category'}' is currently acting as the primary cash engine. Reallocate 20% of underperforming marketing budget specifically to dominate this high-margin vertical.`,
-        priority: 'high'
+        recommendation: `Focus on Strong Segments: '${data.topSellingItems[0]?.category || 'Primary Category'}' is currently the strongest performing area. Evaluate opportunities to further invest in and grow this segment.`,
+        priority: 'medium'
       },
       {
-        recommendation: `Implement Stringent Cost Controls on ${data.expenseByCategory[0]?.category || 'major expenses'}: This category represents a massive capital sink. Form an internal committee to renegotiate vendor contracts and slash this outflow by at least 15% next quarter.`,
+        recommendation: `Expense Review: The largest expense category (${data.expenseByCategory[0]?.category || 'major expenses'}) represents a significant outflow. A periodic review of these costs may identify potential savings or efficiency improvements.`,
         priority: 'medium'
       }
     ],
@@ -471,12 +464,11 @@ export const generateStandardReport = (
     customerConcentration: data.customerConcentration,
     financialPosition: data.liquidity,
     advancedCfoCommentary: {
-      dupontAnalysis: `The entity's ROE is ${data.cfoMetrics.dupont.roe.toFixed(1)}%, primarily driven by its profit margin of ${data.cfoMetrics.dupont.netProfitMargin.toFixed(1)}%.`,
-      breakEvenAnalysis: `Break-even is currently calculated at GHS ${data.cfoMetrics.breakEven.breakEvenRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })} yielding a safety margin of ${data.cfoMetrics.breakEven.marginOfSafety.toFixed(1)}%.`,
-      efficiencyMetrics: `Working Capital displays a Cash Conversion Cycle of ${data.cfoMetrics.workingCapitalCycle.cashConversionCycle.toFixed(1)} days.`
+      dupontAnalysis: `The calculated Return on Equity (ROE) based on tracked transactions is ${data.cfoMetrics.dupont.roe.toFixed(1)}%, primarily influenced by a profit margin of ${data.cfoMetrics.dupont.netProfitMargin.toFixed(1)}%.`,
+      breakEvenAnalysis: `The estimated break-even revenue is GHS ${data.cfoMetrics.breakEven.breakEvenRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}, providing a margin of safety of ${data.cfoMetrics.breakEven.marginOfSafety.toFixed(1)}%.`,
+      efficiencyMetrics: `The Cash Conversion Cycle is estimated at ${data.cfoMetrics.workingCapitalCycle.cashConversionCycle.toFixed(1)} days based on current receivables and payables.`
     },
-    // We will pass the raw cfoMetrics object through 'keyMetrics' to avoid altering AiReport too drastically if strictly typed elsewhere, 
-    // or we can add it directly to AiReport (already added in types.ts step!)
+    // Keep cfoMetrics structure intact for typing
     cfoMetrics: data.cfoMetrics
   };
 };

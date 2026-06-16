@@ -144,7 +144,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                             height: auto !important;
                             -webkit-print-color-adjust: exact !important; 
                             print-color-adjust: exact !important; 
-                            background: #0f172a !important;
+                            background: #ffffff !important;
                             margin: 0 !important;
                             padding: 0 !important;
                             overflow: visible !important;
@@ -197,7 +197,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                     initial={{ opacity: 0, y: 40, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="bg-white dark:bg-dark-primary w-full max-w-6xl my-8 rounded-2xl shadow-2xl flex flex-col relative overflow-hidden border border-white/20 print:block print:w-[210mm] print:max-w-none print:min-w-0 print:m-0 print:rounded-none print:border-none print:shadow-none print:overflow-visible print:transform-none"
+                    className="bg-white w-full max-w-6xl my-8 rounded-2xl shadow-2xl flex flex-col relative overflow-hidden border border-slate-200 print:block print:w-[210mm] print:max-w-none print:min-w-0 print:m-0 print:rounded-none print:border-none print:shadow-none print:overflow-visible print:transform-none"
                 >
                     {/* Sticky Header Actions */}
                     <div className="sticky top-0 bg-white/80 dark:bg-dark-secondary/80 backdrop-blur-md border-b border-slate-200/50 dark:border-dark-border p-4 flex justify-between items-center z-10 shadow-sm print:hidden">
@@ -297,51 +297,41 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                         <div ref={reportRef} className="w-full max-w-[210mm] mx-auto bg-white shadow-2xl">
 
                             {/* Page 1: COVER PAGE */}
-                            <div className={`report-page ${(currentPage === 0 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] h-[297mm] relative overflow-hidden print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-slate-900`}>
-                                {/* High-end abstract background glow meshes */}
-                                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-600 rounded-full mix-blend-screen opacity-20 blur-[120px] pointer-events-none"></div>
-                                <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-emerald-600 rounded-full mix-blend-screen opacity-10 blur-[150px] pointer-events-none"></div>
-                                <div className="absolute top-[40%] right-[20%] w-[30%] h-[30%] bg-rose-600 rounded-full mix-blend-screen opacity-[0.08] blur-[100px] pointer-events-none"></div>
-
-                                <section className="w-full h-full relative flex flex-col justify-between p-20 border border-slate-700/50 m-4 w-[calc(100%-32px)] h-[calc(100%-32px)] backdrop-blur-3xl rounded-3xl shadow-2xl">
+                            <div className={`report-page ${(currentPage === 0 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] h-[297mm] relative overflow-hidden print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-white`}>
+                                <section className="w-full h-full relative flex flex-col justify-between p-20 border-8 border-slate-900 m-4 w-[calc(100%-32px)] h-[calc(100%-32px)] bg-white rounded-sm">
 
                                     {/* Header Content */}
-                                    <div className="relative z-10 block">
-                                        <div className="border-b border-slate-700/50 pb-6 mb-16 flex justify-between items-end">
-                                            <div className="text-[10px] uppercase tracking-[0.4em] font-black text-slate-300">Africa Entrepreneurship School</div>
-                                            <div className="text-[10px] uppercase tracking-[0.2em] font-bold text-rose-500 border border-rose-500/50 bg-rose-500/10 px-3 py-1 rounded-full">Strictly Confidential</div>
+                                    <div className="relative z-10 block mt-12">
+                                        <div className="border-b-2 border-slate-900 pb-6 mb-16 flex justify-between items-end">
+                                            <div className="text-xs uppercase tracking-[0.2em] font-black text-slate-800">Africa Entrepreneurship School</div>
+                                            <div className="text-xs uppercase tracking-[0.1em] font-bold text-slate-600">Confidential Report</div>
                                         </div>
 
-                                        <h1 className="text-6xl font-serif font-black mb-6 leading-tight tracking-tighter text-white">
-                                            STRATEGIC<br />
+                                        <h1 className="text-6xl font-serif font-black mb-6 leading-tight tracking-tight text-slate-900">
                                             FINANCIAL<br />
-                                            REVIEW
+                                            SUMMARY<br />
+                                            REPORT
                                         </h1>
 
-                                        <div className="h-1 w-32 bg-gradient-to-r from-emerald-400 to-indigo-500 mb-12 rounded-full"></div>
+                                        <div className="h-1 w-32 bg-slate-900 mb-12"></div>
 
-                                        <p className="text-xl font-serif text-slate-400 max-w-xl leading-relaxed">
-                                            Comprehensive analysis of financial position, efficiency ratios, and strategic outlook. Prepared exclusively for institutional review.
+                                        <p className="text-lg font-serif text-slate-600 max-w-xl leading-relaxed">
+                                            Prepared from recorded transactions for internal management and external review purposes.
                                         </p>
                                     </div>
 
                                     {/* Footer Content */}
-                                    <div className="relative z-10 grid grid-cols-2 gap-12 border-t border-slate-700/50 pt-12">
+                                    <div className="relative z-10 grid grid-cols-2 gap-12 border-t-2 border-slate-900 pt-12 mb-12">
                                         <div>
-                                            <div className="text-[9px] uppercase tracking-[0.2em] text-slate-500 mb-2 font-black flex items-center gap-2"><i className="fas fa-building text-slate-700"></i> Prepared For</div>
-                                            <div className="text-2xl font-serif font-bold text-white">{entrepreneur.businessName}</div>
-                                            <div className="text-emerald-400 mt-1 text-sm font-serif italic">Attn: {entrepreneur.name}</div>
+                                            <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500 mb-2 font-bold flex items-center gap-2">Prepared For</div>
+                                            <div className="text-2xl font-serif font-bold text-slate-900">{entrepreneur.businessName}</div>
+                                            <div className="text-slate-600 mt-1 text-sm font-serif italic">Attn: {entrepreneur.name}</div>
                                         </div>
                                         <div className="text-right">
-                                            <div className="text-[9px] uppercase tracking-[0.2em] text-slate-500 mb-2 font-black flex items-center justify-end gap-2"><i className="fas fa-calendar-alt text-slate-700"></i> Audit Period</div>
-                                            <div className="text-xl font-mono font-bold text-slate-200">{new Date(period).toLocaleString('default', { month: 'long', year: 'numeric' })}</div>
-                                            <div className="text-slate-600 mt-1 text-[10px] uppercase tracking-widest font-mono">Run Date: {new Date().toLocaleDateString()}</div>
+                                            <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500 mb-2 font-bold flex items-center justify-end gap-2">Report Period</div>
+                                            <div className="text-xl font-mono font-bold text-slate-800">{new Date(period).toLocaleString('default', { month: 'long', year: 'numeric' })}</div>
+                                            <div className="text-slate-500 mt-1 text-[10px] uppercase tracking-widest font-mono">Generated: {new Date().toLocaleDateString()}</div>
                                         </div>
-                                    </div>
-
-                                    {/* Watermark */}
-                                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[150px] font-serif font-black text-slate-800 -rotate-45 pointer-events-none select-none whitespace-nowrap opacity-20">
-                                        UNAUDITED
                                     </div>
                                 </section>
                             </div>
