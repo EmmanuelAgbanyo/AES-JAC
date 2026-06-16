@@ -314,7 +314,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                                     <div className="md:col-span-2 space-y-8">
                                         <div className="p-8 rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 text-sm leading-relaxed text-slate-700 font-serif relative overflow-hidden">
                                             <div className="absolute top-0 left-0 w-2 h-full bg-indigo-500"></div>
-                                            {aiReport.executiveSummary.split('\n').map((paragraph, index) => (
+                                            {(aiReport.executiveSummary || 'AI was unable to generate an executive summary. Please try again.').split('\n').map((paragraph, index) => (
                                                 paragraph.trim() ? (
                                                     <p key={index} className={index > 0 ? "mt-5" : ""}>
                                                         {paragraph.trim().startsWith('EXECUTIVE AUDIT SUMMARY') || paragraph.trim().startsWith('REVENUE VECTOR') || paragraph.trim().startsWith('RISK & LIQUIDITY') ? (
