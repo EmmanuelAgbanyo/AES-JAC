@@ -250,49 +250,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                             </div>
                         )}
 
-                        {/* Toolbar */}
-                        <div className="w-full max-w-5xl mb-6 flex justify-between items-center no-print px-4">
-                            <button onClick={onClose} className="text-slate-500 hover:text-black transition-colors font-bold flex items-center text-xs uppercase tracking-[0.2em]">
-                                <i className="fas fa-chevron-left mr-2"></i> Close Audit
-                            </button>
-
-                            {/* Pagination Controls */}
-                            <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-full shadow-sm border border-slate-200">
-                                <button onClick={prevPage} disabled={currentPage === 0} className="text-slate-400 hover:text-slate-900 disabled:opacity-30 transition-colors">
-                                    <i className="fas fa-chevron-left"></i>
-                                </button>
-                                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                                    Page {currentPage + 1} / {totalPages}
-                                </span>
-                                <button onClick={nextPage} disabled={currentPage === totalPages - 1} className="text-slate-400 hover:text-slate-900 disabled:opacity-30 transition-colors">
-                                    <i className="fas fa-chevron-right"></i>
-                                </button>
-                            </div>
-
-                            <div className="relative">
-                                <Button onClick={() => setIsExportMenuOpen(prev => !prev)} variant="primary" size="sm" className="!bg-slate-900 hover:!bg-slate-800 rounded-lg shadow-xl tracking-widest text-[10px] transition-all">
-                                    {isExporting ? <i className="fas fa-circle-notch fa-spin mr-2"></i> : <i className="fas fa-file-pdf mr-2"></i>}
-                                    {isExporting ? 'Processing...' : 'Export Board Pack'}
-                                </Button>
-                                <AnimatePresence>
-                                    {isExportMenuOpen && (
-                                        <motion.div
-                                            initial={{ opacity: 0, y: -10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -10 }}
-                                            className="absolute right-0 mt-2 w-56 bg-white/90 backdrop-blur-xl shadow-2xl z-[110] border border-slate-200/50 rounded-xl overflow-hidden"
-                                        >
-                                            <button onClick={() => handleExport('pdf')} className="flex items-center w-full px-4 py-4 text-[10px] font-bold text-slate-700 hover:bg-slate-50 hover:text-red-600 transition-colors uppercase tracking-widest">
-                                                <i className="fas fa-file-pdf w-5 text-red-500"></i> Download PDF
-                                            </button>
-                                            <button onClick={() => handleExport('csv')} className="flex items-center w-full px-4 py-4 text-[10px] font-bold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors uppercase tracking-widest border-t border-slate-100">
-                                                <i className="fas fa-file-csv w-5 text-blue-500"></i> Export Raw Ledger
-                                            </button>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-                        </div>
+                        {/* Removed duplicate toolbar */}
 
                         <div ref={reportRef} className="w-full max-w-[210mm] mx-auto bg-white shadow-2xl">
 
@@ -433,7 +391,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
 
                                             <SectionHeader title="Strategic Outlook" />
                                             <div className="space-y-6 mt-8 relative z-10">
-                                                {aiReport.strategicRecommendations.slice(0, 3).map((rec, i) => (
+                                                {(aiReport.strategicRecommendations || []).slice(0, 3).map((rec, i) => (
                                                     <div key={i} className="pl-4 border-l-2 border-indigo-500 bg-gradient-to-r from-indigo-50/50 to-transparent p-3 rounded-r-xl">
                                                         <div className="text-[9px] font-black uppercase mb-2 text-indigo-700 tracking-widest flex items-center gap-2">
                                                             <div className="w-1 h-1 rounded-full bg-indigo-500"></div> {rec.priority} Priority
@@ -449,13 +407,13 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                                                     <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                                                         <div className="flex justify-between items-center text-[10px] font-black uppercase mb-1 tracking-widest text-slate-500">
                                                             <span>Projected Revenue</span>
-                                                            <span className="font-mono text-emerald-600 text-sm tracking-normal">{aiReport.forecast.projectedRevenue}</span>
+                                                            <span className="font-mono text-emerald-600 text-sm tracking-normal">{aiReport.forecast?.projectedRevenue || 'N/A'}</span>
                                                         </div>
                                                     </div>
                                                     <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                                                         <div className="flex justify-between text-[10px] font-black uppercase mb-1 tracking-widest">
                                                             <span>Projected OpEx</span>
-                                                            <span className="font-mono">{aiReport.forecast.projectedOpEx}</span>
+                                                            <span className="font-mono">{aiReport.forecast?.projectedOpEx || 'N/A'}</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1307,115 +1265,76 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                             </div>
 
                             {/* Page 10: Official Audit Sign-off (Back Cover) */}
-                            <div className={`report-page ${(currentPage === 9 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] min-h-[297mm] relative print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-slate-950 text-white overflow-hidden`}>
-                                {/* Extravagant subtle glowing core for back cover */}
-                                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[100%] h-[100%] bg-indigo-900 rounded-full mix-blend-screen opacity-10 blur-[150px] pointer-events-none"></div>
-                                <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-600 rounded-full mix-blend-screen opacity-10 blur-[100px] pointer-events-none"></div>
-                                <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-rose-600 rounded-full mix-blend-screen opacity-10 blur-[100px] pointer-events-none"></div>
+                            <div className={`report-page ${(currentPage === 9 || isExporting === 'pdf') ? 'block' : 'hidden'} w-[210mm] min-h-[297mm] relative print:block print:w-[210mm] print:h-[297mm] print:break-after-page print:break-inside-avoid print:overflow-hidden bg-white text-slate-900 overflow-hidden`}>
 
-                                {/* Abstract digital security grid */}
-                                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_20%,transparent_100%)] pointer-events-none"></div>
-
-                                <div className={`p-16 h-full flex flex-col justify-between relative z-10 ${isExporting === 'pdf' ? 'h-[297mm] overflow-hidden' : ''}`}>
+                                <div className={`p-16 h-full flex flex-col justify-between relative z-10 border-8 border-slate-900 m-4 w-[calc(100%-32px)] h-[calc(100%-32px)] bg-white rounded-sm ${isExporting === 'pdf' ? 'h-[297mm] overflow-hidden' : ''}`}>
 
                                     {/* Top Section */}
                                     <div className="mt-16">
-                                        {/* Premium Animated Seal */}
-                                        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, duration: 0.8, ease: "easeOut" }} className="w-32 h-32 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 border border-emerald-500/30 flex items-center justify-center mb-10 mx-auto shadow-[0_0_80px_rgba(16,185,129,0.15)] relative group">
-                                            {/* Glowing animated rings */}
-                                            <div className="absolute inset-[-4px] rounded-full border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.2)] animate-[spin_10s_linear_infinite]"></div>
-                                            <div className="absolute inset-1 rounded-full border border-emerald-400/20 border-dashed animate-[spin_15s_linear_infinite_reverse]"></div>
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                <i className="fas fa-shield-check text-emerald-400 text-4xl drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]"></i>
-                                            </div>
-                                            <svg className="absolute w-[110%] h-[110%] -inset-[5%] opacity-70 animate-[spin_20s_linear_infinite]" viewBox="0 0 100 100">
-                                                <path id="curve-seal" d="M 50 50 m -40 0 a 40 40 0 1 1 80 0 a 40 40 0 1 1 -80 0" fill="transparent" />
-                                                <text className="text-[7px] uppercase font-mono tracking-[0.2em] text-emerald-300 font-bold" fill="currentColor">
-                                                    <textPath href="#curve-seal" startOffset="0%">· CRYPTOGRAPHICALLY SECURED · VERIFIED SYSTEM ·</textPath>
-                                                </text>
-                                            </svg>
-                                        </motion.div>
-
                                         <div className="text-center mb-12">
-                                            <h2 className="text-5xl font-serif font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400 tracking-tight mb-3 uppercase drop-shadow-sm">Official Attestation</h2>
+                                            <h2 className="text-4xl font-serif font-black text-slate-900 tracking-tight mb-3 uppercase">Official Attestation</h2>
                                             <div className="flex items-center justify-center gap-4">
-                                                <div className="h-[1px] w-16 bg-gradient-to-r from-transparent to-emerald-500/50"></div>
-                                                <div className="text-[10px] uppercase tracking-[0.4em] font-black text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]">Final Audit Certificate</div>
-                                                <div className="h-[1px] w-16 bg-gradient-to-l from-transparent to-emerald-500/50"></div>
+                                                <div className="h-[2px] w-16 bg-slate-900"></div>
+                                                <div className="text-xs uppercase tracking-[0.2em] font-bold text-slate-600">Final Audit Certificate</div>
+                                                <div className="h-[2px] w-16 bg-slate-900"></div>
                                             </div>
                                         </div>
 
                                         <div className="relative max-w-2xl mx-auto">
-                                            {/* Decorative certificate corners */}
-                                            <div className="absolute -top-3 -left-3 w-6 h-6 border-t-2 border-l-2 border-emerald-500/40"></div>
-                                            <div className="absolute -top-3 -right-3 w-6 h-6 border-t-2 border-r-2 border-emerald-500/40"></div>
-                                            <div className="absolute -bottom-3 -left-3 w-6 h-6 border-b-2 border-l-2 border-emerald-500/40"></div>
-                                            <div className="absolute -bottom-3 -right-3 w-6 h-6 border-b-2 border-r-2 border-emerald-500/40"></div>
-
-                                            <div className="bg-slate-900/40 border border-slate-700/50 p-10 backdrop-blur-md shadow-2xl relative z-10 text-center">
-                                                <p className="text-sm font-serif text-slate-300 leading-loose">
-                                                    This <span className="text-white font-bold">Integrated Annual Report and Venture Prospectus</span> has been formally generated, compiled, and audited by the advanced forensic algorithms of the Africa Entrepreneurship School platform.
+                                            <div className="border border-slate-300 p-10 bg-slate-50 relative z-10 text-center">
+                                                <p className="text-sm font-serif text-slate-700 leading-loose">
+                                                    This <span className="text-slate-900 font-bold">Financial Summary Report</span> has been formally generated and compiled by the Africa Entrepreneurship School platform.
                                                 </p>
-                                                <p className="text-sm font-serif text-slate-300 leading-loose mt-4">
-                                                    The financial data detailed herein is certified as a <span className="text-emerald-400 italic font-semibold">true and fair reflection</span> of the ledger entries processed for the stated period, establishing a definitive, immutable audit trail optimized for institutional and private equity review.
+                                                <p className="text-sm font-serif text-slate-700 leading-loose mt-4">
+                                                    The financial data detailed herein is based on the ledger entries processed for the stated period, providing a <span className="text-slate-900 italic font-semibold">true reflection</span> of the recorded transactions.
                                                 </p>
                                             </div>
                                         </div>
 
-                                        {/* Cryptographic Checksum Bar */}
+                                        {/* Checksum Bar */}
                                         <div className="mt-10 flex justify-center">
-                                            <div className="inline-flex items-center gap-3 px-6 py-2.5 bg-slate-900 border border-emerald-500/20 rounded-full font-mono text-[8.5px] text-slate-400 uppercase tracking-[0.15em] shadow-[0_0_15px_rgba(16,185,129,0.05)]">
-                                                <i className="fas fa-fingerprint text-emerald-500"></i>
-                                                <span>System Checksum:</span>
-                                                <span className="text-emerald-400 opacity-80 select-all">{(Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)).toUpperCase()}-AES</span>
+                                            <div className="inline-flex items-center gap-3 px-6 py-2.5 bg-slate-100 border border-slate-200 rounded-full font-mono text-[9px] text-slate-500 uppercase tracking-widest">
+                                                <i className="fas fa-fingerprint text-slate-400"></i>
+                                                <span>Report Checksum:</span>
+                                                <span className="text-slate-700 font-bold">{(Math.random().toString(36).substring(2, 15)).toUpperCase()}-AES</span>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Signatures */}
                                     <div className="grid grid-cols-2 gap-16 px-10 mb-16 relative z-10 mt-16">
-                                        <div className="text-center group">
-                                            <div className="h-24 border-b border-slate-700 mb-5 flex items-end justify-center pb-2 relative transition-all duration-300">
-                                                {/* Glowing line on hover */}
-                                                <div className="absolute bottom-[-1px] left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                                                <div className="absolute bottom-4 w-full text-center font-serif italic text-6xl text-emerald-400/90 transform rotate-[-4deg] drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]">System AI</div>
+                                        <div className="text-center">
+                                            <div className="h-24 border-b border-slate-400 mb-5 flex items-end justify-center pb-2 relative">
+                                                <div className="absolute bottom-4 w-full text-center font-serif italic text-4xl text-slate-700 transform rotate-[-4deg]">System AI</div>
                                             </div>
-                                            <div className="text-[10px] uppercase font-black tracking-[0.3em] text-white">Chief Audit Executive (AI)</div>
-                                            <div className="text-[8px] uppercase tracking-[0.2em] text-emerald-500 mt-2 font-mono flex items-center justify-center gap-1.5">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-[pulse_2s_ease-in-out_infinite]"></div>
-                                                Certified Generation
+                                            <div className="text-xs uppercase font-bold tracking-widest text-slate-900">System Generator</div>
+                                            <div className="text-[9px] uppercase tracking-widest text-slate-500 mt-2 font-mono">
+                                                Automated Compilation
                                             </div>
                                         </div>
 
-                                        <div className="text-center group">
-                                            <div className="h-24 border-b border-slate-700 mb-5 flex items-end justify-center pb-2 relative transition-all duration-300">
-                                                {/* Glowing line on hover */}
-                                                <div className="absolute bottom-[-1px] left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                                                <div className="absolute bottom-4 w-full text-center font-serif italic text-5xl text-slate-200 transform rotate-[-2deg] drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]">{entrepreneur.name}</div>
+                                        <div className="text-center">
+                                            <div className="h-24 border-b border-slate-400 mb-5 flex items-end justify-center pb-2 relative">
+                                                <div className="absolute bottom-4 w-full text-center font-serif italic text-3xl text-slate-900 transform rotate-[-2deg]">{entrepreneur.name}</div>
                                             </div>
-                                            <div className="text-[10px] uppercase font-black tracking-[0.3em] text-white">Managing Director</div>
-                                            <div className="text-[8px] uppercase tracking-[0.2em] text-blue-400 mt-2 font-mono">
+                                            <div className="text-xs uppercase font-bold tracking-widest text-slate-900">Managing Director</div>
+                                            <div className="text-[9px] uppercase tracking-widest text-slate-500 mt-2 font-mono">
                                                 {entrepreneur.businessName}
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Footer / Back Cover branding */}
-                                    <div className="text-center relative z-10 border-t border-slate-800 pt-8 mt-auto">
+                                    <div className="text-center relative z-10 border-t border-slate-200 pt-8 mt-auto">
                                         <div className="flex items-center justify-center gap-4 mb-5">
-                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.3)] relative overflow-hidden text-white font-black text-lg font-mono">
-                                                <div className="absolute inset-0 bg-white/20 transform -translate-x-full rotate-45 animate-none group-hover:animate-[shimmer_2s_infinite]"></div>
-                                                <i className="fas fa-layer-group text-sm"></i>
-                                            </div>
-                                            <h1 className="text-3xl font-black tracking-tighter text-white uppercase drop-shadow-md">
-                                                AES <span className="text-slate-500 font-light text-2xl">| Finance</span>
+                                            <h1 className="text-2xl font-black tracking-tighter text-slate-900 uppercase">
+                                                AES <span className="text-slate-400 font-light">| Finance</span>
                                             </h1>
                                         </div>
-                                        <div className="text-[9px] text-slate-400 uppercase tracking-[0.4em] font-bold">
-                                            A sophisticated product of the Joint Action For Capital
+                                        <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+                                            Africa Entrepreneurship School
                                         </div>
-                                        <div className="text-[8.5px] text-slate-600 mt-4 font-mono opacity-60 flex items-center justify-center gap-2">
-                                            <i className="fas fa-barcode"></i>
+                                        <div className="text-[9px] text-slate-400 mt-4 font-mono flex items-center justify-center gap-2">
                                             REF-ID: AES-FIN-{new Date().getFullYear()}-{Math.floor(Math.random() * 900000) + 100000}
                                         </div>
                                     </div>
