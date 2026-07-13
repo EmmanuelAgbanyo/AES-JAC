@@ -130,7 +130,7 @@ export const generateAiPoweredReport = async (
   
   Return a structured JSON following the schema. Do not include markdown formatting like \`\`\`json. Return strictly the raw JSON.`;
 
-  let aiData;
+  let aiData: Partial<AiReport> = {};
   const apiKey = getApiKey();
 
   if (apiKey) {
@@ -154,7 +154,7 @@ export const generateAiPoweredReport = async (
     }
   }
 
-  if (!aiData) {
+  if (!aiData || Object.keys(aiData).length === 0) {
     try {
         const { puter } = await import('@heyputer/puter.js');
         const puterResponse = await puter.ai.chat(prompt + "\n\nRETURN ONLY RAW, VALID JSON matching the required schema. NO TEXT OR MARKDOWN OUTSIDE THE JSON.");
@@ -174,7 +174,7 @@ export const generateAiPoweredReport = async (
           period: period,
           cashFlowStatement: { operating: [], investing: [], financing: [], netCashChange: "0", closingCash: "0" },
           forecast: { projectedRevenue: "0", projectedOpEx: "0", assumptions: [] },
-          strategicRecommendations: [{ recommendation: "Debug Puter JS", priority: "High" }],
+          strategicRecommendations: [{ recommendation: "Debug Puter JS", priority: "high" }],
           advancedCfoCommentary: { dupontAnalysis: "", breakEvenAnalysis: "", efficiencyMetrics: "" },
           venturePitch: { investmentThesis: "", theAskAndUseOfFunds: "", riskMitigation: "" }
         };
@@ -183,14 +183,21 @@ export const generateAiPoweredReport = async (
 
   try {
     // Merge deterministic financials and KPIs with AI insights
-    // @ts-ignore - bypassing strict typing on the merged object for now, cfoMetrics is guaranteed to exist from reportService
-    return {
-      ...aiData,
+    const completeReport: AiReport = {
+      reportTitle: aiData.reportTitle || "Generated Report",
+      executiveSummary: aiData.executiveSummary || "",
+      period: aiData.period || period,
+      cashFlowStatement: aiData.cashFlowStatement || { operating: [], investing: [], financing: [], netCashChange: "0", closingCash: "0" },
+      forecast: aiData.forecast || { projectedRevenue: "0", projectedOpEx: "0", assumptions: [] },
+      strategicRecommendations: aiData.strategicRecommendations || [],
+      advancedCfoCommentary: aiData.advancedCfoCommentary,
+      venturePitch: aiData.venturePitch,
       kpis: financialData.kpis,
       incomeStatement: financialData.incomeStatement,
       balanceSheet: financialData.balanceSheet,
       cfoMetrics: reportData.cfoMetrics
     };
+    return completeReport;
 
   } catch (error) {
     console.error("Failed to parse AI report JSON:", error);
