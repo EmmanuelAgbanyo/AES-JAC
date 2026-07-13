@@ -1,4 +1,0 @@
-components/ClientManager.tsx(266,29): error TS2322: Type '{ children: any[]; key: any; className: string; }' is not assignable to type '{ children: React.ReactNode; className?: string; }'.
-  Property 'key' does not exist on type '{ children: React.ReactNode; className?: string; }'.
-components/UserManagement.tsx(51,31): error TS2322: Type 'Role.SUPER_ADMIN' is not assignable to type 'Role.ADMIN | Role.STAFF'.
-components/UserManagement.tsx(51,56): error TS2322: Type 'Role.SUPER_ADMIN' is not assignable to type 'Role.ADMIN | Role.STAFF'.
