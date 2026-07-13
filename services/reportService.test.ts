@@ -24,7 +24,6 @@ describe('generateReportData', () => {
     description: `Test ${id}`,
     paymentMethod: PaymentMethod.CASH,
     paidStatus,
-    createdAt: new Date(date).toISOString(),
     productServiceCategory: category,
   });
 
