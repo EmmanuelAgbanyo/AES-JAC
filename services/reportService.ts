@@ -246,6 +246,7 @@ export const generateReportData = (
 };
 
 export const generateDynamicSummary = (data: ReportData, entrepreneurName: string, period: string): string => {
+  if (!data || !data.monthlyTrends || data.monthlyTrends.length === 0) return "";
   const profitable = data.netIncome >= 0;
   const topSource = data.incomeByCategory[0]?.category || "General Sales";
   const topSourcePct = data.incomeByCategory[0]?.percentage.toFixed(1) || "0.0";
