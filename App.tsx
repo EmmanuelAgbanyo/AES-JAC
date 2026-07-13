@@ -729,7 +729,6 @@ const AppContent = () => {
         onSetGoal={() => handleOpenGoalModal(currentUser.user)}
         userRole='entrepreneur'
         onAddTransaction={handleWriteTransaction}
-        onUpdateTransaction={handleWriteTransaction}
         clients={clients.filter(c => c.entrepreneurId === currentUser.user.id)}
         onAddClient={handleAddOrUpdateClient}
         onUpdateClient={handleAddOrUpdateClient}
