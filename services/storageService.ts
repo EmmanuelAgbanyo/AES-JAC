@@ -4,7 +4,7 @@ import type { Entrepreneur, Transaction, User, InventoryItem } from '../types';
 
 // Utility to recursively remove undefined properties before saving to Firebase
 // Firebase RTDB throws an error if an object contains undefined values.
-const removeUndefinedProperties = <T extends Record<string, any>>(obj: T): T => {
+export const removeUndefinedProperties = <T extends Record<string, any>>(obj: T): T => {
     const newObj = { ...obj };
     Object.keys(newObj).forEach(key => {
         if (newObj[key] === undefined) {
