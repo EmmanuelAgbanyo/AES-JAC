@@ -690,6 +690,7 @@ const AppContent = () => {
             inventoryLogs={inventoryLogs}
             onWriteLog={writeInventoryLog}
             onAddTransaction={handleWriteTransaction}
+        onUpdateTransaction={handleWriteTransaction}
             onUpdateEntrepreneur={handleUpdateEntrepreneur}
           />
         );
@@ -730,6 +731,7 @@ const AppContent = () => {
         userRole='entrepreneur'
         onAddTransaction={handleWriteTransaction}
         onUpdateTransaction={handleWriteTransaction}
+
         clients={clients.filter(c => c.entrepreneurId === currentUser.user.id)}
         onAddClient={handleAddOrUpdateClient}
         onUpdateClient={handleAddOrUpdateClient}
