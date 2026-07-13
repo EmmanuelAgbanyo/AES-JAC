@@ -26,7 +26,7 @@ describe('storageService', () => {
             const mockRef = {};
             (ref as any).mockReturnValue(mockRef);
 
-            const entrepreneur: Entrepreneur = {
+            const entrepreneur: any = {
                 id: '123',
                 name: 'John Doe',
                 email: 'john@example.com',
@@ -35,7 +35,7 @@ describe('storageService', () => {
                 createdAt: new Date('2023-01-01T00:00:00Z'),
             };
 
-            await writeEntrepreneur(entrepreneur);
+            await writeEntrepreneur(entrepreneur as Entrepreneur);
 
             expect(ref).toHaveBeenCalledWith(db, 'entrepreneurs/123');
 
