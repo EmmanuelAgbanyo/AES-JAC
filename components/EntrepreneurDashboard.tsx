@@ -41,6 +41,7 @@ interface EntrepreneurDashboardProps {
     inventoryLogs?: InventoryLog[];
     onWriteLog?: (log: InventoryLog) => void;
     onUpdateEntrepreneur?: (entrepreneur: Entrepreneur) => Promise<void>;
+    onUpdateTransaction?: (transaction: Transaction) => Promise<void>;
 }
 
 const StatCard = ({ title, value, color, icon }: { title: string, value: string | number, color: string, icon?: ReactNode }) => {
@@ -72,7 +73,7 @@ const StatCard = ({ title, value, color, icon }: { title: string, value: string 
 };
 
 
-const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditTransaction, onSetGoal, userRole, onAddTransaction, clients = [], onAddClient, onUpdateClient, onDeleteClient, inventory = [], onAddInventoryItem, onUpdateInventoryItem, onDeleteInventoryItem, suppliers = [], onAddSupplier, onUpdateSupplier, onDeleteSupplier, inventoryLogs = [], onWriteLog, onUpdateEntrepreneur }: EntrepreneurDashboardProps) => {
+const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditTransaction, onSetGoal, userRole, onAddTransaction, onUpdateTransaction, clients = [], onAddClient, onUpdateClient, onDeleteClient, inventory = [], onAddInventoryItem, onUpdateInventoryItem, onDeleteInventoryItem, suppliers = [], onAddSupplier, onUpdateSupplier, onDeleteSupplier, inventoryLogs = [], onWriteLog, onUpdateEntrepreneur }: EntrepreneurDashboardProps) => {
     const [activeTab, setActiveTab] = useState<'dashboard' | 'clients' | 'inventory' | 'profile'>('dashboard');
     const [showReportView, setShowReportView] = useState<boolean>(false);
     const [periodType, setPeriodType] = useState<'monthly' | 'yearly'>('monthly');
