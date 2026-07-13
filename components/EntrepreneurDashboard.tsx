@@ -26,6 +26,7 @@ interface EntrepreneurDashboardProps {
     onSetGoal: (entrepreneur: Entrepreneur) => void;
     userRole: 'admin' | 'entrepreneur';
     onAddTransaction?: (transaction: Transaction) => Promise<void>; // For entrepreneur to add transactions
+    onUpdateTransaction?: (transaction: Transaction) => Promise<void>; // For entrepreneur to update transactions
     clients?: Client[];
     onAddClient?: (client: Client) => void;
     onUpdateClient?: (client: Client) => void;
