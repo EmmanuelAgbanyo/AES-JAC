@@ -7,6 +7,10 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    test: {
+      environment: 'jsdom',
+      globals: true,
+    },
     build: {
       chunkSizeWarningLimit: 1600,
       outDir: 'dist',
