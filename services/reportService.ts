@@ -170,14 +170,14 @@ export const generateReportData = (
 
   // 7. Advanced CFO Metrics
 
-  // 7a. DuPont Analysis (Simplified)
+  // 7a. DuPont Analysis
   // ROE = Net Profit Margin * Asset Turnover * Equity Multiplier
-  const totalAssetsDemo = currentAssets + 75000; // Match demo fixed assets
-  const totalEquityDemo = 75000 + netIncome; // Match demo base equity + RE
+  const totalAssetsReal = currentAssets > 0 ? currentAssets : 1; 
+  const totalEquityReal = netIncome > 0 ? netIncome : 1; // Simplified base equity
 
   const netProfitMargin = totalIncome > 0 ? netIncome / totalIncome : 0;
-  const assetTurnover = totalAssetsDemo > 0 ? totalIncome / totalAssetsDemo : 0;
-  const equityMultiplier = totalEquityDemo > 0 ? totalAssetsDemo / totalEquityDemo : 1;
+  const assetTurnover = totalAssetsReal > 0 ? totalIncome / totalAssetsReal : 0;
+  const equityMultiplier = totalEquityReal > 0 ? totalAssetsReal / totalEquityReal : 1;
   const roe = netProfitMargin * assetTurnover * equityMultiplier;
 
   // 7b. Break-Even Analysis
@@ -256,25 +256,25 @@ export const generateDynamicSummary = (data: ReportData, entrepreneurName: strin
 
   let liquidityCommentary = "";
   if (data.liquidity.currentRatio > 2) {
-    liquidityCommentary = "The business maintains a strong liquidity position, indicating an ability to comfortably meet short-term obligations.";
+    liquidityCommentary = "The enterprise commands a highly robust liquidity posture, exhibiting significant capacity to extinguish short-term liabilities and absorb macroeconomic shocks.";
   } else if (data.liquidity.currentRatio > 1) {
-    liquidityCommentary = "Working capital is adequate, suggesting the business can cover its immediate operational liabilities.";
+    liquidityCommentary = "Working capital metrics indicate an adequate liquidity profile, sufficient to sustain immediate operational obligations without triggering capital stress.";
   } else {
-    liquidityCommentary = "Current liquidity metrics indicate potential constraints in meeting short-term obligations. Monitoring cash flow closely is recommended.";
+    liquidityCommentary = "Current liquidity ratios suggest structural constraints in short-term solvency. Immediate treasury interventions and cash-flow optimizations are strongly advised.";
   }
 
-  return `Financial Summary - Period: ${period}
+  return `EXECUTIVE AUDIT SUMMARY - FISCAL PERIOD: ${period}
 
-To the Management and Stakeholders of ${entrepreneurName}:
+To the Board of Directors and Executive Management of ${entrepreneurName}:
 
-This report provides a summary of the financial activities for the period ending ${period}. During this timeframe, the business recorded total revenues of GHS ${data.totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })} and total operating expenses of GHS ${data.totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2 })}. This resulted in a net ${profitable ? "income" : "loss"} of GHS ${Math.abs(data.netIncome).toLocaleString(undefined, { minimumFractionDigits: 2 })}, representing a net margin of ${marginPct}%.
+This confidential memorandum outlines the financial trajectory and operational performance for the period ending ${period}. The enterprise generated top-line revenues of GHS ${data.totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })} against operating expenditures of GHS ${data.totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2 })}. This yields a net ${profitable ? "surplus" : "deficit"} of GHS ${Math.abs(data.netIncome).toLocaleString(undefined, { minimumFractionDigits: 2 })}, representing a net margin of ${marginPct}%.
 
-Operational Overview:
-The primary contributor to revenue was ${topSource}, accounting for ${topSourcePct}% of total income. The largest expense category was ${topExpense}, representing ${topExpensePct}% of total operating outflows. Management is encouraged to review these areas to ensure optimal pricing and cost efficiency.
+REVENUE VECTOR & COST STRUCTURE
+The primary revenue catalyst was ${topSource}, driving ${topSourcePct}% of aggregate income. Conversely, the predominant cost center was identified as ${topExpense}, consuming ${topExpensePct}% of operational outflows. Management is advised to implement strategic pricing reviews and aggressive cost-containment measures in these respective verticals to optimize the bottom line.
 
-Liquidity and Risk:
+RISK & LIQUIDITY PROFILE
 ${liquidityCommentary}
-Additionally, a review of customer concentration shows that the top 3 customers represent ${data.customerConcentration.top3Percentage.toFixed(1)}% of total revenue. Diversifying the customer base may help mitigate potential revenue risks in the future.`;
+Furthermore, an analysis of counterparty risk reveals that the top 3 clients account for ${data.customerConcentration.top3Percentage.toFixed(1)}% of total revenue. Strategic diversification of the client portfolio is essential to mitigate concentration risk and stabilize future revenue streams.`;
 };
 
 export const generateFinancialStatements = (transactions: Transaction[], period: string) => {

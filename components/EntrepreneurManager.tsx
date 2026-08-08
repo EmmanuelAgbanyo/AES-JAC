@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Entrepreneur, User, CurrentUser } from '../types';
+import type { Entrepreneur, User, CurrentUser, Transaction, InventoryItem } from '../types';
 import { AppView } from '../constants';
 import EntrepreneurForm from './EntrepreneurForm';
 import EntrepreneurList from './EntrepreneurList';
@@ -17,6 +17,8 @@ interface EntrepreneurManagerProps {
   onDeleteEntrepreneur: (id: string) => void;
   users: User[];
   currentUser: { type: 'system', user: User };
+  onAddTransaction?: (transaction: Transaction) => Promise<void>;
+  inventory?: InventoryItem[];
 }
 
 const EntrepreneurManager = ({
@@ -30,7 +32,9 @@ const EntrepreneurManager = ({
   onViewDashboard,
   onDeleteEntrepreneur,
   users,
-  currentUser
+  currentUser,
+  onAddTransaction,
+  inventory = []
 }: EntrepreneurManagerProps) => {
   const handleAddOrUpdateEntrepreneur = async (entrepreneurData: Omit<Entrepreneur, 'goals'>) => {
     const isEditing = entrepreneurs.some(e => e.id === entrepreneurData.id);
@@ -73,22 +77,17 @@ const EntrepreneurManager = ({
         />
       )}
       {currentView === AppView.ENTREPRENEURS && (
-        <>
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-800">Manage Entrepreneurs</h1>
-            <Button variant="primary" onClick={() => navigateTo(AppView.ADD_ENTREPRENEUR)}>
-              Add New Entrepreneur
-            </Button>
-          </div>
-          <EntrepreneurList
-            entrepreneurs={entrepreneurs}
-            onEdit={onEdit}
-            onDelete={onDeleteEntrepreneur}
-            onViewDashboard={onViewDashboard}
-            users={users}
-            currentUser={currentUser}
-          />
-        </>
+        <EntrepreneurList
+          entrepreneurs={entrepreneurs}
+          onEdit={onEdit}
+          onDelete={onDeleteEntrepreneur}
+          onViewDashboard={onViewDashboard}
+          onAddEntrepreneur={() => navigateTo(AppView.ADD_ENTREPRENEUR)}
+          users={users}
+          currentUser={currentUser}
+          onAddTransaction={onAddTransaction}
+          inventory={inventory}
+        />
       )}
     </div>
   );

@@ -1,13 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import type { Client } from '../types';
+import type { Client, Transaction, Entrepreneur } from '../types';
+import { TransactionType } from '../constants';
 import Button from './ui/Button';
 import Modal from './ui/Modal';
 import ClientForm from './ClientForm';
-import { User, Phone, Mail, MapPin, Building, Calendar, Edit2, Trash2, Search, Plus, Download } from 'lucide-react';
+import { User, Phone, Mail, MapPin, Building, Calendar, Edit2, Trash2, Search, Plus, Download, MessageCircle, Gift, ArrowRight } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 interface ClientManagerProps {
     clients: Client[];
+    transactions?: Transaction[];
+    entrepreneur?: Entrepreneur;
     onAddClient: (client: Client) => void;
     onUpdateClient: (client: Client) => void;
     onDeleteClient: (id: string) => void;
@@ -20,11 +23,30 @@ const GlassCard: React.FC<{ children: React.ReactNode, className?: string, key?:
     </div>
 );
 
-const ClientManager: React.FC<ClientManagerProps> = ({ clients, onAddClient, onUpdateClient, onDeleteClient, entrepreneurId }) => {
+const ClientManager: React.FC<ClientManagerProps> = ({ clients, transactions = [], entrepreneur, onAddClient, onUpdateClient, onDeleteClient, entrepreneurId }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingClient, setEditingClient] = useState<Client | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
+    const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+
+    const getClientTransactions = (clientName: string) => {
+        return transactions.filter(t => t.customerName === clientName).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    };
+
+    const calculateClientRevenue = (clientName: string) => {
+        return transactions
+            .filter(t => t.customerName === clientName && t.type === TransactionType.INCOME)
+            .reduce((sum, t) => sum + t.amount, 0);
+    };
+
+    const getClientTier = (revenue: number) => {
+        if (revenue >= 10000) return { label: 'VIP', color: 'bg-gradient-to-r from-yellow-300 to-amber-500 text-yellow-900 shadow-yellow-500/20 shadow-lg' };
+        if (revenue >= 5000) return { label: 'Gold', color: 'bg-gradient-to-r from-yellow-100 to-yellow-300 text-yellow-800 shadow-sm' };
+        if (revenue >= 1000) return { label: 'Silver', color: 'bg-gradient-to-r from-gray-200 to-gray-300 text-gray-800' };
+        return { label: 'Standard', color: 'bg-gray-100 text-gray-600' };
+    };
 
     const filteredClients = useMemo(() => {
         return clients.filter(client =>
@@ -40,9 +62,7 @@ const ClientManager: React.FC<ClientManagerProps> = ({ clients, onAddClient, onU
     };
 
     const handleDeleteClick = (id: string) => {
-        if (window.confirm("Are you sure you want to delete this client?")) {
-            onDeleteClient(id);
-        }
+        onDeleteClient(id);
     };
 
     const handleCloseModal = () => {
@@ -260,10 +280,14 @@ const ClientManager: React.FC<ClientManagerProps> = ({ clients, onAddClient, onU
                 </div>
             ) : (
                 <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
-                    {filteredClients.map((client) => (
+                    {filteredClients.map((client) => {
+                        const revenue = calculateClientRevenue(client.name);
+                        const tier = getClientTier(revenue);
+                        return (
                         <GlassCard
                             key={client.id}
-                            className={`group transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] ${viewMode === 'list' ? 'flex items-center p-4 gap-6' : 'p-6 flex flex-col h-full'}`}
+                            className={`group transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] cursor-pointer ${viewMode === 'list' ? 'flex items-center p-4 gap-6' : 'p-6 flex flex-col h-full'}`}
+                            onClick={() => setSelectedClient(client)}
                         >
                             {/* Actions Overlay */}
                             <div className={`absolute top-4 right-4 flex space-x-2 transition-all duration-300 ${viewMode === 'list' ? 'opacity-0 group-hover:opacity-100' : 'opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0'}`}>
@@ -299,6 +323,16 @@ const ClientManager: React.FC<ClientManagerProps> = ({ clients, onAddClient, onU
                                             <Building size={14} className="mr-1.5 opacity-70" />
                                             {client.company}
                                         </p>
+                                    )}
+                                    {revenue > 0 && (
+                                        <div className="mt-2 flex items-center gap-2">
+                                            <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${tier.color}`}>
+                                                {tier.label}
+                                            </span>
+                                            <span className="text-sm font-semibold text-green-600 dark:text-green-400">
+                                                GHS {revenue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                            </span>
+                                        </div>
                                     )}
                                 </div>
 
@@ -337,10 +371,13 @@ const ClientManager: React.FC<ClientManagerProps> = ({ clients, onAddClient, onU
                             {viewMode === 'grid' && (
                                 <div className="mt-auto pt-5 border-t border-gray-100 dark:border-white/5 flex justify-between items-center text-xs font-medium text-gray-400">
                                     <span>Added {new Date(client.createdAt).toLocaleDateString()}</span>
+                                    <div className="flex gap-2">
+                                         <ArrowRight size={14} className="group-hover:text-blue-500 transition-colors" />
+                                    </div>
                                 </div>
                             )}
                         </GlassCard>
-                    ))}
+                    )})}
                 </div>
             )}
 
@@ -356,6 +393,79 @@ const ClientManager: React.FC<ClientManagerProps> = ({ clients, onAddClient, onU
                         initialData={editingClient || undefined}
                         entrepreneurId={entrepreneurId}
                     />
+                </Modal>
+            )}
+
+            {selectedClient && (
+                <Modal
+                    isOpen={true}
+                    onClose={() => setSelectedClient(null)}
+                    title="Client Profile"
+                    size="lg"
+                >
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-6">
+                            <div className="h-20 w-20 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-3xl shadow-xl shadow-indigo-500/30">
+                                {selectedClient.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-black text-gray-900 dark:text-white">{selectedClient.name}</h2>
+                                {selectedClient.company && <p className="text-gray-500 font-medium">{selectedClient.company}</p>}
+                                <div className="mt-2 flex gap-3">
+                                    <span className={`text-xs font-bold px-2.5 py-1 rounded-md ${getClientTier(calculateClientRevenue(selectedClient.name)).color}`}>
+                                        {getClientTier(calculateClientRevenue(selectedClient.name)).label}
+                                    </span>
+                                    <span className="text-sm font-bold text-green-600 bg-green-50 dark:bg-green-900/20 px-2.5 py-1 rounded-md">
+                                        Total Revenue: GHS {calculateClientRevenue(selectedClient.name).toLocaleString()}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {selectedClient.phone && entrepreneur?.whatsappNumber && (
+                             <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-900/30 rounded-2xl p-5">
+                                 <h4 className="font-bold text-green-800 dark:text-green-400 mb-3 flex items-center gap-2"><MessageCircle size={18} /> WhatsApp Quick Actions</h4>
+                                 <div className="flex flex-wrap gap-3">
+                                     <a 
+                                        href={`https://wa.me/${selectedClient.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Happy Birthday ${selectedClient.name}! 🎉 Wishing you a fantastic day from ${entrepreneur.businessName}.`)}`} 
+                                        target="_blank" rel="noopener noreferrer"
+                                        className="bg-green-600 hover:bg-green-700 text-white text-sm font-bold py-2 px-4 rounded-xl flex items-center gap-2 transition-colors shadow-sm"
+                                     >
+                                         <Gift size={16} /> Send Birthday Wish
+                                     </a>
+                                     <a 
+                                        href={`https://wa.me/${selectedClient.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi ${selectedClient.name}, thank you for your continued business with ${entrepreneur.businessName}! We truly appreciate your support.`)}`} 
+                                        target="_blank" rel="noopener noreferrer"
+                                        className="bg-white border border-green-200 text-green-700 hover:bg-green-50 text-sm font-bold py-2 px-4 rounded-xl flex items-center gap-2 transition-colors shadow-sm"
+                                     >
+                                         <MessageCircle size={16} /> Send "Thank You"
+                                     </a>
+                                 </div>
+                             </div>
+                        )}
+
+                        <div>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 border-b border-gray-100 dark:border-white/5 pb-2">Transaction History</h3>
+                            {getClientTransactions(selectedClient.name).length > 0 ? (
+                                <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
+                                    {getClientTransactions(selectedClient.name).map(t => (
+                                        <div key={t.id} className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl flex justify-between items-center border border-gray-100 dark:border-white/5">
+                                            <div>
+                                                <p className="font-bold text-gray-800 dark:text-gray-200 text-sm">{t.description}</p>
+                                                <p className="text-xs text-gray-500">{new Date(t.date).toLocaleDateString()}</p>
+                                            </div>
+                                            <span className={`font-bold ${t.type === TransactionType.INCOME ? 'text-green-600' : 'text-red-600'}`}>
+                                                {t.type === TransactionType.INCOME ? '+' : '-'}GHS {t.amount.toLocaleString()}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-gray-500 italic text-center py-4">No transactions recorded for this client yet.</p>
+                            )}
+                        </div>
+
+                    </div>
                 </Modal>
             )}
         </div>

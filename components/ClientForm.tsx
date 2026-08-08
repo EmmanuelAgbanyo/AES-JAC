@@ -10,6 +10,39 @@ interface ClientFormProps {
     entrepreneurId: string;
 }
 
+// Custom Input Component for this form to maintain style consistency within the modal
+const FormInput = ({
+    label,
+    name,
+    type = "text",
+    icon: Icon,
+    value,
+    error,
+    onChange,
+    required = false,
+    placeholder
+}: any) => (
+    <div className="space-y-1.5 group">
+        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
+            {label} {required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+        <div className={`relative transition-all duration-200 ${error ? 'animate-shake' : ''}`}>
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-500 transition-colors">
+                <Icon size={18} />
+            </div>
+            <input
+                type={type}
+                name={name}
+                value={value}
+                onChange={onChange}
+                placeholder={placeholder}
+                className={`w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-800/50 border ${error ? 'border-red-500 focus:ring-red-200' : 'border-gray-200 dark:border-gray-700 focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30'} rounded-xl focus:outline-none focus:ring-4 transition-all duration-200 text-gray-900 dark:text-white placeholder-gray-400`}
+            />
+        </div>
+        {error && <span className="text-xs text-red-500 mt-1 ml-1">{error}</span>}
+    </div>
+);
+
 const ClientForm: React.FC<ClientFormProps> = ({ onSubmit, onCancel, initialData, entrepreneurId }) => {
     const getInitialState = () => {
         if (initialData) {
@@ -88,39 +121,6 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSubmit, onCancel, initialData
             }, 1000);
         }
     };
-
-    // Custom Input Component for this form to maintain style consistency within the modal
-    const FormInput = ({
-        label,
-        name,
-        type = "text",
-        icon: Icon,
-        value,
-        error,
-        onChange,
-        required = false,
-        placeholder
-    }: any) => (
-        <div className="space-y-1.5 group">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
-                {label} {required && <span className="text-red-500 ml-1">*</span>}
-            </label>
-            <div className={`relative transition-all duration-200 ${error ? 'animate-shake' : ''}`}>
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-500 transition-colors">
-                    <Icon size={18} />
-                </div>
-                <input
-                    type={type}
-                    name={name}
-                    value={value}
-                    onChange={onChange}
-                    placeholder={placeholder}
-                    className={`w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-800/50 border ${error ? 'border-red-500 focus:ring-red-200' : 'border-gray-200 dark:border-gray-700 focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30'} rounded-xl focus:outline-none focus:ring-4 transition-all duration-200 text-gray-900 dark:text-white placeholder-gray-400`}
-                />
-            </div>
-            {error && <span className="text-xs text-red-500 mt-1 ml-1">{error}</span>}
-        </div>
-    );
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">

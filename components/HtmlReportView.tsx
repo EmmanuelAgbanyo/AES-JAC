@@ -455,7 +455,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                                                         <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
                                                         <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} tickFormatter={(value) => `${value / 1000}k`} />
                                                         <Tooltip
-                                                            contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                                            contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(16px)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.5)', boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)' }}
                                                             formatter={(value: number) => [`GHS ${value.toLocaleString()}`, '']}
                                                         />
                                                         <Bar dataKey="income" name="Income" fill="#10b981" radius={[4, 4, 0, 0]} barSize={20} />
@@ -581,55 +581,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
 
                                     {/* Logic to determine if we use Real Data or Demo Data */}
                                     {(() => {
-                                        const hasRealData = aiReport.incomeStatement &&
-                                            aiReport.incomeStatement.revenue &&
-                                            aiReport.incomeStatement.revenue.length > 0 &&
-                                            parseAmount(aiReport.incomeStatement.netIncome) !== 0;
-
-                                        // Fallback Demo Data for "Impress Me" Demo
-                                        const demoData = {
-                                            incomeStatement: {
-                                                revenue: [
-                                                    { label: 'Corporate Consulting', amount: '65,400.00', isTotal: false },
-                                                    { label: 'Training Workshops', amount: '42,150.00', isTotal: false },
-                                                    { label: 'Subscription Services', amount: '18,500.00', isTotal: false },
-                                                    { label: 'Total Revenue', amount: '126,050.00', isTotal: true }
-                                                ],
-                                                expenses: [
-                                                    { label: 'Staff Salaries', amount: '45,000.00', isTotal: false, indent: 1 },
-                                                    { label: 'Office Rent & Utilities', amount: '12,500.00', isTotal: false, indent: 1 },
-                                                    { label: 'Marketing & Ads', amount: '8,400.00', isTotal: false, indent: 1 },
-                                                    { label: 'Software Licenses', amount: '3,200.00', isTotal: false, indent: 1 },
-                                                    { label: 'Travel & Logistics', amount: '4,150.00', isTotal: false, indent: 1 },
-                                                    { label: 'Total Expenses', amount: '73,250.00', isTotal: true }
-                                                ],
-                                                netIncome: '52,800.00'
-                                            },
-                                            balanceSheet: {
-                                                assets: [
-                                                    { label: 'Current Assets', amount: '', isTotal: true },
-                                                    { label: 'Cash & Bank Balances', amount: '52,800.00', isTotal: false, indent: 1 },
-                                                    { label: 'Accounts Receivable', amount: '15,400.00', isTotal: false, indent: 1 },
-                                                    { label: 'Non-Current Assets', amount: '', isTotal: true },
-                                                    { label: 'Office Equipment', amount: '35,000.00', isTotal: false, indent: 1 },
-                                                    { label: 'Total Assets', amount: '103,200.00', isTotal: true }
-                                                ],
-                                                liabilities: [
-                                                    { label: 'Current Liabilities', amount: '', isTotal: true },
-                                                    { label: 'Accounts Payable', amount: '12,500.00', isTotal: false, indent: 1 },
-                                                    { label: 'Tax Payable', amount: '13,200.00', isTotal: false, indent: 1 },
-                                                ],
-                                                equity: [
-                                                    { label: 'Shareholders Equity', amount: '', isTotal: true },
-                                                    { label: 'Owner Capital', amount: '24,700.00', isTotal: false, indent: 1 },
-                                                    { label: 'Retained Earnings', amount: '52,800.00', isTotal: false, indent: 1 },
-                                                ],
-                                                totalAssets: '103,200.00',
-                                                totalLiabilitiesAndEquity: '103,200.00'
-                                            }
-                                        };
-
-                                        const data = hasRealData ? aiReport : demoData;
+                                        const data = aiReport;
 
                                         return (
                                             <div className={`grid grid-cols-1 gap-8 h-full origin-top relative z-10 w-full flex-grow ${isExporting === 'pdf' ? 'scale-[0.90]' : ''}`}>
@@ -1004,7 +956,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                                                                             <Tooltip
                                                                                 formatter={(value: number) => [`GHS ${value.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 'Revenue']}
                                                                                 itemStyle={{ color: '#0f172a', fontWeight: 'bold' }}
-                                                                                contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)' }}
+                                                                                contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(16px)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.5)', boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)' }}
                                                                             />
                                                                             <Legend verticalAlign="middle" align="right" layout="vertical" wrapperStyle={{ fontSize: '11px', fontFamily: 'monospace', fontWeight: 'bold' }} />
                                                                         </PieChart>
@@ -1117,7 +1069,7 @@ const HtmlReportView = ({ aiReport, entrepreneur, transactionsForPeriod, period,
                                                                         <Tooltip
                                                                             formatter={(value: number) => [`GHS ${value.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 'Expense']}
                                                                             cursor={{ fill: '#f8fafc' }}
-                                                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)' }}
+                                                                            contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(16px)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.5)', boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)' }}
                                                                         />
                                                                         <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                                                                             {barData.map((entry, index) => (

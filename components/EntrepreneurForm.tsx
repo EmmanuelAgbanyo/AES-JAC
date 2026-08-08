@@ -24,6 +24,7 @@ const EntrepreneurForm = ({ onSubmit, initialData, onCancel, users = [], current
     preferredPaymentType: PaymentMethod.CASH,
     bio: '',
     assignedStaffId: '',
+    whatsappNumber: '',
   });
   const [errors, setErrors] = useState<Partial<Record<keyof typeof formData, string>>>({});
   const [isSuccess, setIsSuccess] = useState(false);
@@ -39,6 +40,7 @@ const EntrepreneurForm = ({ onSubmit, initialData, onCancel, users = [], current
         preferredPaymentType: initialData.preferredPaymentType,
         bio: initialData.bio || '',
         assignedStaffId: initialData.assignedStaffId || '',
+        whatsappNumber: initialData.whatsappNumber || '',
       });
     }
   }, [initialData]);
@@ -73,6 +75,13 @@ const EntrepreneurForm = ({ onSubmit, initialData, onCancel, users = [], current
                     tempErrors.bio = "";
                 }
                 break;
+            case 'whatsappNumber':
+                 if (fieldValues.whatsappNumber && !/^[0-9\s+-]{10,}$/.test(fieldValues.whatsappNumber)) {
+                    tempErrors.whatsappNumber = "Please enter a valid WhatsApp number (e.g. +233...).";
+                 } else {
+                    tempErrors.whatsappNumber = "";
+                 }
+                 break;
             default:
                 break;
         }
@@ -121,6 +130,7 @@ const EntrepreneurForm = ({ onSubmit, initialData, onCancel, users = [], current
                 preferredPaymentType: PaymentMethod.CASH,
                 bio: '',
                 assignedStaffId: '',
+                whatsappNumber: '',
             });
             setErrors({});
             setTimeout(() => setIsSuccess(false), 3000);
@@ -157,6 +167,16 @@ const EntrepreneurForm = ({ onSubmit, initialData, onCancel, users = [], current
         onBlur={handleBlur}
         error={errors.contact}
         required
+      />
+      <Input
+        label="WhatsApp Number (for automated messages)"
+        id="whatsappNumber"
+        name="whatsappNumber"
+        value={formData.whatsappNumber}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        error={errors.whatsappNumber}
+        placeholder="+233 20 000 0000"
       />
       <Input
         label="Business Name"

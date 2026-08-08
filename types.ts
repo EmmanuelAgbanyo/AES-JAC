@@ -27,6 +27,7 @@ export interface Entrepreneur {
   assignedStaffId?: string;
   pin?: string;
   logoUrl?: string;
+  whatsappNumber?: string;
 }
 
 export interface Client {
@@ -42,6 +43,7 @@ export interface Client {
   lastTransactionDate?: string;
   dateOfBirth?: string;
   totalRevenue?: number;
+  vipTier?: string;
 }
 
 export interface InventoryItem {

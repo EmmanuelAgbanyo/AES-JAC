@@ -184,130 +184,137 @@ const TransactionForm = ({ onSubmit, onCancel, initialData, entrepreneurs, curre
 
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      
-      {!currentEntrepreneur && (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {!currentEntrepreneur && (
+          <div className="col-span-1 md:col-span-2">
+            <Select
+              label="Entrepreneur"
+              id="entrepreneurId"
+              name="entrepreneurId"
+              value={formData.entrepreneurId}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              options={entrepreneurOptions}
+              error={errors.entrepreneurId}
+              required
+            />
+          </div>
+        )}
+
         <Select
-          label="Entrepreneur"
-          id="entrepreneurId"
-          name="entrepreneurId"
-          value={formData.entrepreneurId}
+          label="Transaction Type"
+          id="type"
+          name="type"
+          value={formData.type}
+          onChange={handleChange}
+          options={transactionTypeOptions}
+          required
+        />
+        <Input
+          label="Date"
+          id="date"
+          name="date"
+          type="date"
+          value={formData.date.split('T')[0]} // Handle potential full ISO string from initialData
           onChange={handleChange}
           onBlur={handleBlur}
-          options={entrepreneurOptions}
-          error={errors.entrepreneurId}
+          error={errors.date}
           required
         />
-      )}
-
-      <Select
-        label="Transaction Type"
-        id="type"
-        name="type"
-        value={formData.type}
-        onChange={handleChange}
-        options={transactionTypeOptions}
-        required
-      />
-      <Input
-        label="Date"
-        id="date"
-        name="date"
-        type="date"
-        value={formData.date.split('T')[0]} // Handle potential full ISO string from initialData
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={errors.date}
-        required
-      />
-      <Input
-        label="Description"
-        id="description"
-        name="description"
-        value={formData.description}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={errors.description}
-        required
-      />
-      <Input
-        label="Amount (GHS)"
-        id="amount"
-        name="amount"
-        type="number"
-        step="0.01"
-        value={formData.amount}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={errors.amount}
-        required
-      />
-      <Select
-        label="Payment Method"
-        id="paymentMethod"
-        name="paymentMethod"
-        value={formData.paymentMethod}
-        onChange={handleChange}
-        options={paymentMethodOptions}
-        required
-      />
-      {formData.type === TransactionType.INCOME && (
-        <Select
-          label="Paid Status"
-          id="paidStatus"
-          name="paidStatus"
-          value={formData.paidStatus || PaidStatus.FULL}
+        <div className="col-span-1 md:col-span-2">
+          <Input
+            label="Description"
+            id="description"
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={errors.description}
+            required
+          />
+        </div>
+        <Input
+          label="Amount (GHS)"
+          id="amount"
+          name="amount"
+          type="number"
+          step="0.01"
+          value={formData.amount}
           onChange={handleChange}
-          options={paidStatusOptions}
+          onBlur={handleBlur}
+          error={errors.amount}
           required
         />
-      )}
-      <Input
-        label="Customer Name (Optional)"
-        id="customerName"
-        name="customerName"
-        value={formData.customerName || ''}
-        onChange={handleChange}
-      />
-      <Input
-        label="Product/Service Category (Optional)"
-        id="productServiceCategory"
-        name="productServiceCategory"
-        value={formData.productServiceCategory || ''}
-        onChange={handleChange}
-      />
+        <Select
+          label="Payment Method"
+          id="paymentMethod"
+          name="paymentMethod"
+          value={formData.paymentMethod}
+          onChange={handleChange}
+          options={paymentMethodOptions}
+          required
+        />
+        {formData.type === TransactionType.INCOME && (
+          <Select
+            label="Paid Status"
+            id="paidStatus"
+            name="paidStatus"
+            value={formData.paidStatus || PaidStatus.FULL}
+            onChange={handleChange}
+            options={paidStatusOptions}
+            required
+          />
+        )}
+        <Input
+          label="Customer Name (Optional)"
+          id="customerName"
+          name="customerName"
+          value={formData.customerName || ''}
+          onChange={handleChange}
+        />
+        <Input
+          label="Product/Service Category (Optional)"
+          id="productServiceCategory"
+          name="productServiceCategory"
+          value={formData.productServiceCategory || ''}
+          onChange={handleChange}
+        />
+      </div>
 
       {formData.type === TransactionType.INCOME && inventory.length > 0 && (
         <div className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-900/20 space-y-4">
           <p className="text-sm font-semibold text-blue-700 dark:text-blue-400 flex items-center">
             <Package size={16} className="mr-2" /> Link to Inventory (Optional)
           </p>
-          <Select
-            label="Select Product"
-            id="inventoryItemId"
-            name="inventoryItemId"
-            value={formData.inventoryItemId}
-            onChange={handleChange}
-            options={[
-              { value: '', label: 'None (One-time Sale/Service)' },
-              ...inventory.map(i => ({ value: i.id, label: `${i.name} (Stock: ${i.quantity})` }))
-            ]}
-          />
-          {formData.inventoryItemId && (
-            <Input
-              label="Quantity Sold"
-              id="quantitySold"
-              name="quantitySold"
-              type="number"
-              value={formData.quantitySold}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Select
+              label="Select Product"
+              id="inventoryItemId"
+              name="inventoryItemId"
+              value={formData.inventoryItemId}
               onChange={handleChange}
-              required
+              options={[
+                { value: '', label: 'None (One-time Sale/Service)' },
+                ...inventory.map(i => ({ value: i.id, label: `${i.name} (Stock: ${i.quantity})` }))
+              ]}
             />
-          )}
+            {formData.inventoryItemId && (
+              <Input
+                label="Quantity Sold"
+                id="quantitySold"
+                name="quantitySold"
+                type="number"
+                value={formData.quantitySold}
+                onChange={handleChange}
+                required
+              />
+            )}
+          </div>
         </div>
       )}
 
-      <div className="flex justify-end items-center space-x-3 pt-4 border-t dark:border-dark-border mt-4">
+      <div className="flex justify-end items-center space-x-3 pt-6 border-t dark:border-dark-border mt-6">
          {onCancel && <Button type="button" variant="secondary" onClick={onCancel} disabled={isSuccess}>Cancel</Button>}
          <Button type="submit" variant={isSuccess ? "success" : "primary"} disabled={isSuccess}>
             {isSuccess ? successMessage : (isEditing ? 'Save Changes' : 'Add Transaction')}

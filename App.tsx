@@ -48,6 +48,7 @@ import FullPageLoader from './components/ui/FullPageLoader';
 import Login from './components/Login';
 import UserManagement from './components/UserManagement';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { ToastProvider, useToast } from './contexts/ToastContext';
 import Input from './components/ui/Input';
 import Button from './components/ui/Button';
 import ChatWidget from './components/ChatWidget';
@@ -55,6 +56,7 @@ import ChatWidget from './components/ChatWidget';
 
 
 const AppContent = () => {
+  const toast = useToast();
   const [currentView, setCurrentView] = useState<AppView>(() => {
     return (localStorage.getItem('currentView') as AppView) || AppView.LOGIN;
   });
@@ -157,52 +159,89 @@ const AppContent = () => {
   }, []);
 
   const handleShowNotification = (message: string, type: 'success' | 'error') => {
-    setShowNotification({ message, type });
-    setTimeout(() => setShowNotification(null), 3000); // Hide after 3 seconds
+    if (type === 'success') {
+      toast.success(message);
+    } else {
+      toast.error(message);
+    }
   };
 
   const handleAddOrUpdateClient = async (client: Client) => {
-    await writeClient(client);
+    try {
+      await writeClient(client);
+      toast.success('Client saved successfully!');
+    } catch (err) {
+      toast.error('Failed to save client.');
+    }
   };
 
   const handleDeleteClient = async (id: string) => {
-    await deleteClient(id);
+    toast.confirm({
+      title: 'Delete Client',
+      message: 'Are you sure you want to remove this client? This cannot be undone.',
+      confirmText: 'Delete Client',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          await deleteClient(id);
+          toast.success('Client removed successfully!');
+        } catch (err) {
+          toast.error('Failed to delete client.');
+        }
+      }
+    });
   };
 
   const handleWriteInventoryItem = async (item: InventoryItem) => {
     try {
       await writeInventoryItem(item);
-      handleShowNotification('Inventory item saved successfully!', 'success');
+      toast.success('Inventory item saved successfully!');
     } catch (error) {
-      handleShowNotification('Failed to save inventory item.', 'error');
+      toast.error('Failed to save inventory item.');
     }
   };
 
   const handleDeleteInventoryItem = async (id: string) => {
-    try {
-      await deleteInventoryItem(id);
-      handleShowNotification('Inventory item deleted!', 'success');
-    } catch (error) {
-      handleShowNotification('Failed to delete item.', 'error');
-    }
+    toast.confirm({
+      title: 'Delete Inventory Item',
+      message: 'Are you sure you want to delete this inventory item?',
+      confirmText: 'Delete Item',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          await deleteInventoryItem(id);
+          toast.success('Inventory item deleted successfully!');
+        } catch (error) {
+          toast.error('Failed to delete item.');
+        }
+      }
+    });
   };
 
   const handleWriteSupplier = async (supplier: Supplier) => {
     try {
       await writeSupplier(supplier);
-      handleShowNotification('Supplier saved successfully!', 'success');
+      toast.success('Supplier saved successfully!');
     } catch (error) {
-      handleShowNotification('Failed to save supplier.', 'error');
+      toast.error('Failed to save supplier.');
     }
   };
 
   const handleDeleteSupplier = async (id: string) => {
-    try {
-      await deleteSupplier(id);
-      handleShowNotification('Supplier deleted!', 'success');
-    } catch (error) {
-      handleShowNotification('Failed to delete supplier.', 'error');
-    }
+    toast.confirm({
+      title: 'Delete Supplier',
+      message: 'Are you sure you want to remove this supplier?',
+      confirmText: 'Delete Supplier',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          await deleteSupplier(id);
+          toast.success('Supplier deleted successfully!');
+        } catch (error) {
+          toast.error('Failed to delete supplier.');
+        }
+      }
+    });
   };
 
   const handleUpdateEntrepreneur = async (updatedEntrepreneur: Entrepreneur) => {
@@ -242,45 +281,42 @@ const AppContent = () => {
   };
 
   const handleDeleteEntrepreneur = useCallback(async (id: string) => {
-    try {
-      const entrepreneurToDelete = entrepreneurs.find(e => e.id === id);
-      if (!entrepreneurToDelete) {
-        throw new Error("Entrepreneur not found.");
-      }
+    const entrepreneurToDelete = entrepreneurs.find(e => e.id === id);
+    if (!entrepreneurToDelete) return;
 
-      // Prepare an object for an atomic, multi-path update. This ensures all
-      // related data is deleted in a single, all-or-nothing operation.
-      const updates: { [key: string]: any } = {};
+    toast.confirm({
+      title: `Delete ${entrepreneurToDelete.name}`,
+      message: `Are you sure you want to delete ${entrepreneurToDelete.name}? This will permanently remove all associated transactions, inventory, and clients.`,
+      confirmText: 'Delete Permanently',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          const updates: { [key: string]: any } = {};
+          updates[`entrepreneurs/${id}`] = null;
 
-      // Path for entrepreneur deletion (setting to null removes it)
-      updates[`entrepreneurs/${id}`] = null;
+          transactions
+            .filter(transaction => transaction.entrepreneurId === id)
+            .forEach(transaction => {
+              updates[`transactions/${transaction.id}`] = null;
+            });
 
-      // Paths for all associated transaction deletions
-      transactions
-        .filter(transaction => transaction.entrepreneurId === id)
-        .forEach(transaction => {
-          updates[`transactions/${transaction.id}`] = null;
-        });
+          if (entrepreneurToDelete.assignedStaffId) {
+            const staffUser = users.find(u => u.id === entrepreneurToDelete.assignedStaffId);
+            if (staffUser?.assignedEntrepreneurIds?.includes(id)) {
+              const newAssignedIds = staffUser.assignedEntrepreneurIds.filter(eId => eId !== id);
+              updates[`users/${staffUser.id}/assignedEntrepreneurIds`] = newAssignedIds;
+            }
+          }
 
-      // Path to update staff user's assignments for data consistency
-      if (entrepreneurToDelete.assignedStaffId) {
-        const staffUser = users.find(u => u.id === entrepreneurToDelete.assignedStaffId);
-        if (staffUser?.assignedEntrepreneurIds?.includes(id)) {
-          const newAssignedIds = staffUser.assignedEntrepreneurIds.filter(eId => eId !== id);
-          updates[`users/${staffUser.id}/assignedEntrepreneurIds`] = newAssignedIds;
+          await performAtomicUpdate(updates);
+          toast.success(`Successfully deleted ${entrepreneurToDelete.name}.`, 'Entrepreneur Deleted');
+        } catch (error) {
+          console.error("Failed to delete entrepreneur and their transactions:", error);
+          toast.error("An error occurred while deleting the entrepreneur.");
         }
       }
-
-      // Execute the atomic update operation
-      await performAtomicUpdate(updates);
-
-      alert(`Successfully deleted ${entrepreneurToDelete.name}.`);
-
-    } catch (error) {
-      console.error("Failed to delete entrepreneur and their transactions:", error);
-      alert("An error occurred while trying to delete the entrepreneur. Please check the console for more details.");
-    }
-  }, [entrepreneurs, transactions, users]);
+    });
+  }, [entrepreneurs, transactions, users, toast]);
 
   const handleResetData = useCallback(async () => {
     if (resetConfirmationText !== 'DELETE') {
@@ -351,17 +387,32 @@ const AppContent = () => {
   };
 
   const handleAddScannedTransaction = async (transaction: Transaction) => {
-    await writeTransaction(transaction);
-    setScannedTransaction(null);
+    try {
+      await writeTransaction(transaction);
+      setScannedTransaction(null);
+      toast.success('Scanned transaction added successfully!', 'Transaction Recorded');
+    } catch (err) {
+      toast.error('Failed to save transaction.');
+    }
   };
 
   const handleWriteTransaction = async (transaction: Transaction) => {
-    await writeTransaction(transaction);
+    try {
+      await writeTransaction(transaction);
+      toast.success('Transaction saved successfully!', 'Success');
+    } catch (err) {
+      toast.error('Failed to save transaction.');
+    }
   };
 
   const handleUpdateTransaction = async (updatedTransaction: Transaction) => {
-    await writeTransaction(updatedTransaction);
-    setEditingTransaction(null);
+    try {
+      await writeTransaction(updatedTransaction);
+      setEditingTransaction(null);
+      toast.success('Transaction updated successfully!', 'Changes Saved');
+    } catch (err) {
+      toast.error('Failed to update transaction.');
+    }
   };
 
   const handleOpenGoalModal = (entrepreneur: Entrepreneur) => {
@@ -664,6 +715,8 @@ const AppContent = () => {
             onDeleteEntrepreneur={handleDeleteEntrepreneur}
             users={users}
             currentUser={currentUser as { type: 'system', user: User }}
+            onAddTransaction={handleWriteTransaction}
+            inventory={inventory}
           />
         );
       case AppView.ENTREPRENEUR_DASHBOARD:
@@ -729,7 +782,6 @@ const AppContent = () => {
         onSetGoal={() => handleOpenGoalModal(currentUser.user)}
         userRole='entrepreneur'
         onAddTransaction={handleWriteTransaction}
-        onUpdateTransaction={handleWriteTransaction}
         clients={clients.filter(c => c.entrepreneurId === currentUser.user.id)}
         onAddClient={handleAddOrUpdateClient}
         onUpdateClient={handleAddOrUpdateClient}
@@ -895,7 +947,9 @@ const AppContent = () => {
 const App = () => {
   return (
     <ThemeProvider>
-      <AppContent />
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
     </ThemeProvider>
   );
 };

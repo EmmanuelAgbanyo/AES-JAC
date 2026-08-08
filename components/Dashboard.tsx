@@ -4,6 +4,8 @@ import { TransactionType } from '../constants';
 import StatCard from './Dashboard/StatCard';
 import PerformanceChart from './Dashboard/PerformanceChart';
 import RecentActivity from './Dashboard/RecentActivity';
+import { motion } from 'framer-motion';
+import { Download, Trophy, Users } from 'lucide-react';
 
 interface DashboardProps {
     entrepreneurs: Entrepreneur[];
@@ -13,10 +15,10 @@ interface DashboardProps {
 type DateRange = '7d' | '30d' | '90d' | 'all';
 
 const DATE_RANGE_OPTIONS: { key: DateRange; label: string }[] = [
-    { key: '7d', label: 'Last 7 Days' },
-    { key: '30d', label: 'Last 30 Days' },
-    { key: '90d', label: 'Last 90 Days' },
-    { key: 'all', label: 'All Time' },
+    { key: '7d', label: '7D' },
+    { key: '30d', label: '30D' },
+    { key: '90d', label: '90D' },
+    { key: 'all', label: 'All' },
 ];
 
 const getPeriodDates = (range: DateRange) => {
@@ -48,6 +50,26 @@ const getPreviousPeriodDates = (range: DateRange, currentStart: Date) => {
     const end = new Date(currentStart.getTime() - 1);
     const start = new Date(end.getTime() - diff);
     return { start, end };
+};
+
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1,
+            delayChildren: 0.1,
+        }
+    }
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+        opacity: 1, 
+        y: 0,
+        transition: { type: 'spring', stiffness: 300, damping: 24 }
+    }
 };
 
 const Dashboard = ({ entrepreneurs, transactions }: DashboardProps) => {
@@ -134,96 +156,156 @@ const Dashboard = ({ entrepreneurs, transactions }: DashboardProps) => {
     }, [dateRange, transactions, entrepreneurs]);
 
     return (
-        <div className="space-y-8 pb-10">
+        <motion.div 
+            className="space-y-8 pb-10"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+        >
             {/* Header Section */}
-            {/* Header Section - Floating Glass */}
-            <div className="flex flex-col md:flex-row justify-between md:items-end gap-4 bg-white/70 dark:bg-black/40 backdrop-blur-2xl p-8 rounded-[2rem] border border-white/50 dark:border-white/10 shadow-2xl shadow-indigo-500/10 mb-8 animate-slideUp relative overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-r from-white/40 to-transparent dark:from-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
-                <div className="relative z-10">
-                    <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-aesBlue to-indigo-600 dark:from-blue-400 dark:to-indigo-300 mb-2 tracking-tight">
-                        Welcome back, <span className="text-gray-900 dark:text-white">Admin</span>
+            <motion.div 
+                variants={itemVariants}
+                className="flex flex-col md:flex-row justify-between md:items-end gap-6 bg-gradient-to-br from-white/90 to-white/50 dark:from-gray-900/90 dark:to-black/50 backdrop-blur-3xl p-8 rounded-[2.5rem] border border-white/60 dark:border-white/10 shadow-2xl shadow-indigo-500/5 relative overflow-hidden group"
+            >
+                {/* Decorative background blobs */}
+                <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none"></div>
+                <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none"></div>
+
+                <div className="relative z-10 space-y-2">
+                    <h1 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gray-900 via-indigo-900 to-gray-900 dark:from-white dark:via-blue-200 dark:to-white tracking-tight">
+                        Welcome back, Admin
                     </h1>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Here's what's happening with your entrepreneurs today.</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-base font-medium flex items-center gap-2">
+                        <Users size={18} className="text-indigo-500" />
+                        Overview of your entrepreneur network
+                    </p>
                 </div>
-                <div className="bg-white/80 dark:bg-black/50 p-1.5 rounded-2xl shadow-inner border border-white/40 dark:border-white/10 flex items-center backdrop-blur-md relative z-10">
+                
+                <div className="bg-white/80 dark:bg-black/40 p-1.5 rounded-2xl shadow-sm border border-gray-200/50 dark:border-white/10 flex items-center backdrop-blur-xl relative z-10">
                     {DATE_RANGE_OPTIONS.map(opt => (
                         <button
                             key={opt.key}
                             onClick={() => setDateRange(opt.key)}
-                            className={`px-5 py-2.5 text-sm font-bold rounded-xl transition-all duration-300 ${dateRange === opt.key
-                                ? 'bg-gradient-to-r from-aesBlue to-indigo-600 text-white shadow-lg shadow-indigo-500/30 scale-100'
-                                : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/10'
-                                }`}
+                            className="relative px-6 py-2.5 text-sm font-bold rounded-xl transition-colors duration-300 z-10"
                         >
-                            {opt.label}
+                            {dateRange === opt.key && (
+                                <motion.div 
+                                    layoutId="active-pill" 
+                                    className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-blue-600 rounded-xl shadow-lg shadow-indigo-500/25"
+                                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                                />
+                            )}
+                            <span className={`relative z-20 ${dateRange === opt.key ? 'text-white' : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'}`}>
+                                {opt.label}
+                            </span>
                         </button>
                     ))}
                 </div>
-            </div>
+            </motion.div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-slideUp" style={{ animationDelay: '100ms' }}>
-                <StatCard title="Total Income" value={currentStats.totalIncome} previousValue={previousStats.totalIncome} formatAs="currency" />
-                <StatCard title="Total Expenses" value={currentStats.totalExpenses} previousValue={previousStats.totalExpenses} formatAs="currency" isExpense />
-                <StatCard title="Net Income" value={currentStats.netIncome} previousValue={previousStats.netIncome} formatAs="currency" />
-                <StatCard title="Active Entrepreneurs" value={currentStats.newEntrepreneurs} previousValue={previousStats.newEntrepreneurs} />
-            </div>
+            <motion.div variants={containerVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <StatCard 
+                    title="Total Income" 
+                    value={currentStats.totalIncome} 
+                    previousValue={previousStats.totalIncome} 
+                    formatAs="currency" 
+                    icon="income"
+                />
+                <StatCard 
+                    title="Total Expenses" 
+                    value={currentStats.totalExpenses} 
+                    previousValue={previousStats.totalExpenses} 
+                    formatAs="currency" 
+                    isExpense 
+                    icon="expense"
+                />
+                <StatCard 
+                    title="Net Income" 
+                    value={currentStats.netIncome} 
+                    previousValue={previousStats.netIncome} 
+                    formatAs="currency" 
+                    icon="net"
+                />
+                <StatCard 
+                    title="Active Entrepreneurs" 
+                    value={currentStats.newEntrepreneurs} 
+                    previousValue={previousStats.newEntrepreneurs} 
+                    icon="users"
+                />
+            </motion.div>
 
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                 {/* Chart Section */}
-                <div className="xl:col-span-2 bg-white/70 dark:bg-black/40 backdrop-blur-2xl p-8 rounded-3xl shadow-xl border border-white/50 dark:border-white/10 hover:border-white/80 dark:hover:border-white/20 transition-colors duration-500 animate-slideUp group" style={{ animationDelay: '200ms' }}>
-                    <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Financial Performance</h3>
-                        <button className="text-sm font-bold text-aesBlue hover:text-indigo-700 transition-colors bg-blue-50/50 dark:bg-white/5 px-4 py-2 rounded-xl hover:bg-blue-100/50 border border-blue-100 dark:border-white/5">Download Report</button>
+                <motion.div variants={itemVariants} className="xl:col-span-2 bg-white/80 dark:bg-gray-900/50 backdrop-blur-2xl p-8 rounded-[2rem] shadow-xl border border-gray-100 dark:border-white/5 hover:border-gray-200 dark:hover:border-white/10 transition-colors duration-500 group">
+                    <div className="flex justify-between items-center mb-8">
+                        <div className="space-y-1">
+                            <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">Financial Performance</h3>
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Revenue versus expenses over time</p>
+                        </div>
+                        <button className="flex items-center gap-2 text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors bg-indigo-50/50 dark:bg-indigo-900/20 px-4 py-2.5 rounded-xl hover:bg-indigo-100/50 dark:hover:bg-indigo-900/40 border border-indigo-100/50 dark:border-indigo-500/20">
+                            <Download size={16} />
+                            <span>Export</span>
+                        </button>
                     </div>
                     <PerformanceChart data={chartData} />
-                </div>
+                </motion.div>
 
                 {/* Sidebar Column */}
-                <div className="space-y-8 animate-slideUp" style={{ animationDelay: '300ms' }}>
-                    <RecentActivity activities={recentActivities} entrepreneurs={entrepreneurs} />
+                <div className="space-y-8">
+                    <motion.div variants={itemVariants}>
+                        <RecentActivity activities={recentActivities} entrepreneurs={entrepreneurs} />
+                    </motion.div>
 
                     {/* Top Entrepreneurs Card */}
-                    <div className="bg-white/70 dark:bg-black/40 backdrop-blur-2xl p-8 rounded-3xl shadow-xl border border-white/50 dark:border-white/10 hover:border-white/80 dark:hover:border-white/20 transition-colors duration-500 group">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
-                                <div className="p-2 bg-gradient-to-br from-yellow-400/20 to-amber-600/20 rounded-lg ring-1 ring-yellow-400/30">
-                                    <svg className="w-5 h-5 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                                    </svg>
-                                </div>
-                                Top Performers
-                            </h3>
-                            <button className="text-xs font-bold text-aesBlue hover:text-indigo-700 transition-colors bg-blue-50/50 dark:bg-white/5 px-3 py-1.5 rounded-lg hover:bg-blue-100/50 border border-blue-100 dark:border-white/5">View All</button>
+                    <motion.div variants={itemVariants} className="bg-white/80 dark:bg-gray-900/50 backdrop-blur-2xl p-8 rounded-[2rem] shadow-xl border border-gray-100 dark:border-white/5 hover:border-gray-200 dark:hover:border-white/10 transition-colors duration-500 group">
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="space-y-1">
+                                <h3 className="text-xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
+                                    <div className="p-2.5 bg-gradient-to-br from-amber-400/20 to-orange-500/20 rounded-xl ring-1 ring-amber-400/30">
+                                        <Trophy className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                                    </div>
+                                    Top Performers
+                                </h3>
+                                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 ml-11">By generated revenue</p>
+                            </div>
                         </div>
 
                         {topEntrepreneurs.length > 0 ? (
-                            <ul className="space-y-3">
+                            <ul className="space-y-4">
                                 {topEntrepreneurs.map((e, index) => (
-                                    <li key={index} className="flex justify-between items-center p-3 rounded-2xl hover:bg-white/60 dark:hover:bg-white/10 transition-all duration-300 border border-transparent hover:border-white/50 dark:hover:border-white/20 group/item hover:-translate-y-0.5 hover:shadow-lg">
+                                    <motion.li 
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: index * 0.1 }}
+                                        key={index} 
+                                        className="flex justify-between items-center p-4 rounded-2xl bg-white/50 dark:bg-white/5 border border-gray-100/50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/10 transition-all duration-300 group/item hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-500/5"
+                                    >
                                         <div className="flex items-center gap-4">
-                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shadow-md transition-transform group-hover/item:scale-110 duration-300 ${index === 0 ? 'bg-gradient-to-br from-yellow-300 to-yellow-600 text-white ring-2 ring-yellow-400/50' :
-                                                index === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-500 text-white ring-2 ring-slate-400/50' :
-                                                    index === 2 ? 'bg-gradient-to-br from-amber-600 to-amber-800 text-white ring-2 ring-amber-600/50' :
-                                                        'bg-white/50 dark:bg-white/10 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-white/10'
-                                                }`}>
+                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg shadow-sm transition-transform group-hover/item:scale-110 duration-300 ${
+                                                index === 0 ? 'bg-gradient-to-br from-amber-300 via-yellow-500 to-amber-600 text-white ring-2 ring-amber-400/50' :
+                                                index === 1 ? 'bg-gradient-to-br from-slate-300 via-gray-400 to-slate-500 text-white ring-2 ring-slate-400/50' :
+                                                index === 2 ? 'bg-gradient-to-br from-orange-400 via-orange-600 to-orange-800 text-white ring-2 ring-orange-500/50' :
+                                                'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 border border-gray-200/50 dark:border-white/10'
+                                            }`}>
                                                 {index + 1}
                                             </div>
-                                            <span className="font-semibold text-gray-800 dark:text-gray-200">{e.name}</span>
+                                            <span className="font-bold text-gray-800 dark:text-gray-100">{e.name}</span>
                                         </div>
-                                        <span className="font-bold text-gray-900 dark:text-white bg-white/50 dark:bg-white/5 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm">
+                                        <span className="font-extrabold text-gray-900 dark:text-white bg-white/80 dark:bg-black/40 px-4 py-2 rounded-xl border border-gray-200/50 dark:border-white/10 shadow-sm">
                                             GHS {e.income.toLocaleString()}
                                         </span>
-                                    </li>
+                                    </motion.li>
                                 ))}
                             </ul>
-                        ) : <p className="text-center text-gray-500 py-8 italic">No revenue recorded yet.</p>}
-                    </div>
+                        ) : <p className="text-center text-gray-500 py-8 italic font-medium">No revenue recorded yet.</p>}
+                    </motion.div>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 };
 
 export default Dashboard;
+

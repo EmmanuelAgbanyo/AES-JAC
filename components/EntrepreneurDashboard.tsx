@@ -13,10 +13,23 @@ import GoalCard from './GoalCard';
 import Modal from './ui/Modal';
 import TransactionForm from './TransactionForm';
 import ClientManager from './ClientManager';
-import { LayoutDashboard, Users, TrendingUp, Package, User, Mail, Phone, Calendar, FileText, Save, Image as ImageIcon } from 'lucide-react';
+import { LayoutDashboard, Users, TrendingUp, Package, User, Mail, Phone, Calendar, FileText, Save, Image as ImageIcon, ArrowUpRight, ArrowDownRight, Trophy, PlusCircle } from 'lucide-react';
 import type { Client, InventoryItem, Supplier, InventoryLog } from '../types';
 import InventoryManager from './InventoryManager';
+import { motion, AnimatePresence } from 'framer-motion';
 
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: { staggerChildren: 0.1, delayChildren: 0.1 }
+    }
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
+};
 
 interface EntrepreneurDashboardProps {
     entrepreneur: Entrepreneur | null;
@@ -46,20 +59,20 @@ interface EntrepreneurDashboardProps {
 const StatCard = ({ title, value, color, icon }: { title: string, value: string | number, color: string, icon?: ReactNode }) => {
     // Map standard tailwind colors to glassmorphic gradient overlays based on the passed color string
     let gradientOverlay = 'from-gray-500/10';
-    if (color.includes('success')) gradientOverlay = 'from-green-500/20';
+    if (color.includes('success')) gradientOverlay = 'from-emerald-500/20';
     if (color.includes('info')) gradientOverlay = 'from-blue-500/20';
-    if (color.includes('aesYellow')) gradientOverlay = 'from-yellow-500/20';
+    if (color.includes('aesYellow')) gradientOverlay = 'from-amber-500/20';
     if (color.includes('aesBlue')) gradientOverlay = 'from-indigo-500/20';
-    if (color.includes('danger')) gradientOverlay = 'from-red-500/20';
+    if (color.includes('danger')) gradientOverlay = 'from-rose-500/20';
 
     return (
-        <div className={`relative overflow-hidden bg-white/70 dark:bg-black/40 backdrop-blur-2xl p-6 rounded-3xl shadow-lg border border-white/50 dark:border-white/10 hover:border-white/80 dark:hover:border-white/20 transition-all duration-500 group hover:-translate-y-2 hover:shadow-2xl`}>
+        <motion.div variants={itemVariants} whileHover={{ y: -5 }} className="relative overflow-hidden bg-white/80 dark:bg-gray-900/50 backdrop-blur-2xl p-6 rounded-[2rem] shadow-xl border border-gray-100 dark:border-white/5 hover:border-gray-200 dark:hover:border-white/10 transition-colors duration-500 group">
             {/* Subtle Gradient Background Overlay */}
             <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-gradient-to-br ${gradientOverlay} to-transparent pointer-events-none`}></div>
             <div className="relative z-10 flex items-center justify-between">
-                <div>
-                    <p className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">{title}</p>
-                    <p className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">{value}</p>
+                <div className="space-y-1">
+                    <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{title}</p>
+                    <p className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{value}</p>
                 </div>
                 {icon && (
                     <div className="text-4xl opacity-80 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 drop-shadow-md">
@@ -67,7 +80,7 @@ const StatCard = ({ title, value, color, icon }: { title: string, value: string 
                     </div>
                 )}
             </div>
-        </div>
+        </motion.div>
     );
 };
 
@@ -318,7 +331,12 @@ const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditT
 
 
     return (
-        <div className="space-y-8">
+        <motion.div 
+            className="space-y-8"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+        >
             {userRole === 'admin' && (
                 <div className="flex justify-start">
                     <Button variant="secondary" onClick={() => navigateTo(AppView.ENTREPRENEURS)}>← Back to Entrepreneurs List</Button>
@@ -337,7 +355,7 @@ const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditT
             )}
 
             {/* Tab Navigation */}
-            <div className="flex space-x-2 bg-white/50 dark:bg-black/30 backdrop-blur-md p-1.5 rounded-2xl shadow-inner border border-white/40 dark:border-white/10 mb-8 max-w-fit mx-auto md:mx-0 relative z-10">
+            <motion.div variants={itemVariants} className="flex space-x-2 bg-white/80 dark:bg-black/50 backdrop-blur-xl p-1.5 rounded-2xl shadow-sm border border-gray-200/50 dark:border-white/10 mb-8 max-w-fit mx-auto md:mx-0 relative z-10">
                 {[
                     { id: 'dashboard', icon: LayoutDashboard, label: 'Overview' },
                     { id: 'clients', icon: Users, label: 'Clients' },
@@ -347,22 +365,30 @@ const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditT
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as any)}
-                        className={`px-5 py-2.5 text-sm font-bold rounded-xl transition-all duration-300 flex items-center space-x-2 ${activeTab === tab.id
-                            ? 'bg-gradient-to-r from-aesBlue to-indigo-600 text-white shadow-lg shadow-indigo-500/30 scale-100'
-                            : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/10'
-                            }`}
+                        className="relative px-5 py-2.5 text-sm font-bold rounded-xl transition-colors duration-300 flex items-center space-x-2.5 z-10"
                     >
-                        <tab.icon size={18} />
-                        <span>{tab.label}</span>
+                        {activeTab === tab.id && (
+                            <motion.div 
+                                layoutId="active-tab" 
+                                className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-blue-600 rounded-xl shadow-lg shadow-indigo-500/25"
+                                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                            />
+                        )}
+                        <tab.icon size={18} className={`relative z-20 ${activeTab === tab.id ? 'text-white' : 'text-gray-500 group-hover:text-gray-700 dark:text-gray-400'}`} />
+                        <span className={`relative z-20 ${activeTab === tab.id ? 'text-white' : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'}`}>
+                            {tab.label}
+                        </span>
                     </button>
                 ))}
-            </div>
+            </motion.div>
 
             {activeTab === 'clients' ? (
                 <div className="animate-fadeIn">
                     {onAddClient && onUpdateClient && onDeleteClient ? (
                         <ClientManager
                             clients={clients}
+                            transactions={transactions}
+                            entrepreneur={entrepreneur}
                             onAddClient={onAddClient}
                             onUpdateClient={onUpdateClient}
                             onDeleteClient={onDeleteClient}
@@ -509,32 +535,36 @@ const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditT
                     </div>
                 </div>
             ) : (
-                <div className="space-y-8 animate-fadeIn">
+                <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8">
                     {/* Header Banner - Glassmorphic */}
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between space-y-4 md:space-y-0 md:space-x-6 bg-white/70 dark:bg-black/40 backdrop-blur-2xl p-8 rounded-[2rem] border border-white/50 dark:border-white/10 shadow-2xl shadow-indigo-500/10 relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-gradient-to-r from-aesBlue/5 to-transparent dark:from-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
+                    <motion.div variants={itemVariants} className="flex flex-col md:flex-row items-start md:items-center justify-between space-y-4 md:space-y-0 md:space-x-6 bg-gradient-to-br from-white/90 to-white/50 dark:from-gray-900/90 dark:to-black/50 backdrop-blur-3xl p-8 rounded-[2.5rem] border border-white/60 dark:border-white/10 shadow-2xl shadow-indigo-500/5 relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none"></div>
                         <div className="flex items-center space-x-6 relative z-10">
                             {entrepreneur.logoUrl ? (
-                                <img src={entrepreneur.logoUrl} alt="Logo" className="w-24 h-24 rounded-2xl object-cover shadow-xl shadow-yellow-500/30 ring-4 ring-white/50 dark:ring-black/20 transform group-hover:rotate-3 transition-transform duration-500" />
+                                <img src={entrepreneur.logoUrl} alt="Logo" className="w-24 h-24 rounded-[1.25rem] object-cover shadow-xl shadow-indigo-500/20 ring-4 ring-white/80 dark:ring-white/10 transform group-hover:scale-105 transition-transform duration-500" />
                             ) : (
-                                <div className="text-5xl bg-gradient-to-br from-aesYellow to-yellow-600 text-white w-24 h-24 rounded-2xl flex items-center justify-center flex-shrink-0 font-extrabold shadow-xl shadow-yellow-500/30 ring-4 ring-white/50 dark:ring-black/20 transform group-hover:rotate-3 transition-transform duration-500">
+                                <div className="text-5xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white w-24 h-24 rounded-[1.25rem] flex items-center justify-center flex-shrink-0 font-extrabold shadow-xl shadow-indigo-500/30 ring-4 ring-white/80 dark:ring-white/10 transform group-hover:scale-105 transition-transform duration-500">
                                     {entrepreneur.name.charAt(0)}
                                 </div>
                             )}
-                            <div className="flex-grow">
-                                <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 tracking-tight">{entrepreneur.name}</h1>
-                                <p className="text-xl text-aesBlue dark:text-blue-400 font-bold mt-1">{entrepreneur.businessName}</p>
-                                {entrepreneur.bio && <p className="mt-2 text-gray-500 dark:text-gray-400 italic">"{entrepreneur.bio}"</p>}
+                            <div className="flex-grow space-y-1">
+                                <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gray-900 via-indigo-900 to-gray-900 dark:from-white dark:via-blue-200 dark:to-white tracking-tight">{entrepreneur.name}</h1>
+                                <p className="text-xl text-indigo-600 dark:text-indigo-400 font-extrabold tracking-tight">{entrepreneur.businessName}</p>
+                                {entrepreneur.bio && <p className="text-gray-500 dark:text-gray-400 font-medium">"{entrepreneur.bio}"</p>}
                             </div>
                         </div>
                         <div className="relative z-10">
-                            {userRole === 'entrepreneur' && (
-                                <button className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-xl shadow-lg shadow-green-500/30 transition-all transform hover:scale-105 font-bold" onClick={() => setIsAddTransactionModalOpen(true)}>
-                                    + Add Transaction
+                            {onAddTransaction && (
+                                <button 
+                                    className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-6 py-3 rounded-xl shadow-lg shadow-emerald-500/30 transition-all transform hover:scale-105 font-bold flex items-center gap-2" 
+                                    onClick={() => setIsAddTransactionModalOpen(true)}
+                                >
+                                    <PlusCircle size={18} />
+                                    {userRole === 'admin' ? '+ Enter Transaction on Behalf' : '+ Add Transaction'}
                                 </button>
                             )}
                         </div>
-                    </div>
+                    </motion.div>
 
                     {/* Stat Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -545,10 +575,15 @@ const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditT
                     </div>
 
                     {/* Goals Section */}
-                    <div className="bg-white/70 dark:bg-black/40 backdrop-blur-2xl p-8 rounded-[2rem] border border-white/50 dark:border-white/10 shadow-xl transition-colors duration-500 hover:border-white/80 dark:hover:border-white/20">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Goals & Milestones</h3>
-                            <button className="bg-aesBlue/10 text-aesBlue hover:bg-aesBlue hover:text-white transition-colors duration-300 px-4 py-2 rounded-xl font-bold text-sm" onClick={() => onSetGoal(entrepreneur)}>Set New Goal</button>
+                    <motion.div variants={itemVariants} className="bg-white/80 dark:bg-gray-900/50 backdrop-blur-2xl p-8 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-xl hover:border-gray-200 dark:hover:border-white/10 transition-colors duration-500">
+                        <div className="flex justify-between items-center mb-8">
+                            <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
+                                <Trophy className="w-6 h-6 text-indigo-500" />
+                                Goals & Milestones
+                            </h3>
+                            <button className="bg-indigo-50/50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border border-indigo-100/50 dark:border-indigo-500/20 transition-colors duration-300 px-4 py-2 rounded-xl font-bold text-sm shadow-sm" onClick={() => onSetGoal(entrepreneur)}>
+                                Set New Goal
+                            </button>
                         </div>
                         {entrepreneur.goals && entrepreneur.goals.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -557,21 +592,22 @@ const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditT
                                 ))}
                             </div>
                         ) : (
-                            <div className="bg-white/50 dark:bg-white/5 border border-dashed border-gray-300 dark:border-white/20 rounded-2xl p-8 text-center">
+                            <div className="bg-gray-50/50 dark:bg-white/5 border border-dashed border-gray-200 dark:border-white/10 rounded-2xl p-8 text-center shadow-inner">
                                 <p className="text-gray-500 dark:text-gray-400 italic font-medium">No goals set yet. Click "Set New Goal" to get started.</p>
                             </div>
                         )}
-                    </div>
+                    </motion.div>
 
                     {/* Report Generator Card */}
-                    <div className="bg-white dark:bg-dark-secondary p-6 rounded-lg shadow-lg border-2 border-aesYellow">
-                        <h3 className="text-xl font-semibold text-gray-700 dark:text-dark-text mb-4">AI Performance Reports</h3>
-                        <p className="text-gray-600 dark:text-dark-textSecondary mb-4">
+                    <motion.div variants={itemVariants} className="bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-gray-800 p-8 rounded-[2rem] shadow-xl border border-indigo-100 dark:border-indigo-900/50 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+                        <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-3 tracking-tight relative z-10">AI Performance Reports</h3>
+                        <p className="text-gray-600 dark:text-gray-400 font-medium mb-6 relative z-10">
                             Select a period to generate a detailed, professional report with AI-powered financial analysis.
                         </p>
                         {(availableMonths.length > 0 || availableYears.length > 0) ? (
-                            <>
-                                <div className="flex flex-col sm:flex-row gap-4 items-end mb-4">
+                            <div className="relative z-10">
+                                <div className="flex flex-col sm:flex-row gap-4 items-end mb-6">
                                     <div className="w-full sm:w-auto">
                                         <Select
                                             label="Report Type"
@@ -622,19 +658,22 @@ const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditT
                                         </Button>
                                     </div>
                                 </div>
-                                {reportError && <p className="text-red-500 mt-2">{reportError}</p>}
-                            </>
+                                {reportError && <p className="text-red-500 mt-2 font-medium">{reportError}</p>}
+                            </div>
                         ) : (
                             <p className="text-gray-500 dark:text-dark-textSecondary p-4 bg-gray-50 dark:bg-dark-primary rounded-md">No transactions recorded yet. An AI report can be generated once transactions are added.</p>
                         )}
-                    </div>
+                    </motion.div>
 
                     {/* Main content grid */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div className="lg:col-span-2 space-y-8">
                             {/* Chart */}
-                            <div className="bg-white/70 dark:bg-black/40 backdrop-blur-2xl p-8 rounded-[2rem] border border-white/50 dark:border-white/10 shadow-xl transition-colors duration-500 hover:border-white/80 dark:hover:border-white/20">
-                                <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight mb-6">Monthly Performance</h3>
+                            <motion.div variants={itemVariants} className="bg-white/80 dark:bg-gray-900/50 backdrop-blur-2xl p-8 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-xl transition-colors duration-500 hover:border-gray-200 dark:hover:border-white/10">
+                                <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight mb-6 flex items-center gap-2">
+                                    <TrendingUp className="w-6 h-6 text-indigo-500" />
+                                    Monthly Performance
+                                </h3>
                                 {chartData.length > 0 ? (
                                     <ResponsiveContainer width="100%" height={320}>
                                         <BarChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
@@ -657,11 +696,11 @@ const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditT
                                             </defs>
                                         </BarChart>
                                     </ResponsiveContainer>
-                                ) : <p className="text-gray-500 dark:text-gray-400 italic">Not enough data for a monthly chart.</p>}
-                            </div>
+                                ) : <p className="text-gray-500 dark:text-gray-400 italic font-medium">Not enough data for a monthly chart.</p>}
+                            </motion.div>
                             {/* Recent Transactions */}
-                            <div className="bg-white/70 dark:bg-black/40 backdrop-blur-2xl p-8 rounded-[2rem] border border-white/50 dark:border-white/10 shadow-xl transition-colors duration-500 hover:border-white/80 dark:hover:border-white/20">
-                                <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight mb-6">Recent Transactions</h3>
+                            <motion.div variants={itemVariants} className="bg-white/80 dark:bg-gray-900/50 backdrop-blur-2xl p-8 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-xl transition-colors duration-500 hover:border-gray-200 dark:hover:border-white/10">
+                                <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight mb-6">Recent Transactions</h3>
                                 {recentTransactions.length > 0 ? (
                                     <ul className="space-y-3">
                                         {recentTransactions.map(t => (
@@ -685,13 +724,13 @@ const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditT
                                             </li>
                                         ))}
                                     </ul>
-                                ) : <p className="text-gray-500 dark:text-gray-400 italic">No transactions recorded yet.</p>}
-                            </div>
+                                ) : <p className="text-gray-500 dark:text-gray-400 italic font-medium">No transactions recorded yet.</p>}
+                            </motion.div>
                         </div>
 
                         {/* Customer List */}
-                        <div className="bg-white/70 dark:bg-black/40 backdrop-blur-2xl p-8 rounded-[2rem] border border-white/50 dark:border-white/10 shadow-xl transition-colors duration-500 hover:border-white/80 dark:hover:border-white/20">
-                            <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight mb-6">Top Customers</h3>
+                        <motion.div variants={itemVariants} className="bg-white/80 dark:bg-gray-900/50 backdrop-blur-2xl p-8 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-xl transition-colors duration-500 hover:border-gray-200 dark:hover:border-white/10">
+                            <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight mb-6">Top Customers</h3>
                             {customerList.length > 0 ? (
                                 <div className="overflow-y-auto pr-2 custom-scrollbar" style={{ maxHeight: '600px' }}>
                                     <ul className="space-y-3">
@@ -715,11 +754,11 @@ const EntrepreneurDashboard = ({ entrepreneur, transactions, navigateTo, onEditT
                                     </ul>
                                 </div>
                             ) : <p className="text-gray-500 dark:text-gray-400 italic">No customers with recorded names yet.</p>}
-                        </div>
+                        </motion.div>
                     </div>
-                </div>
+                </motion.div>
             )}
-        </div>
+        </motion.div>
     );
 };
 
