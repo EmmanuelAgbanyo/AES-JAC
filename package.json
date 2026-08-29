@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "jest"
   },
   "dependencies": {
     "@google/genai": "^1.36.0",
@@ -24,12 +25,15 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^22.14.0",
     "@types/node-fetch": "^2.6.13",
     "@vitejs/plugin-react": "^5.0.0",
     "dotenv": "^17.3.1",
+    "jest": "^30.4.2",
     "node-fetch": "^2.7.0",
     "react-is": "^19.2.4",
+    "ts-jest": "^29.4.11",
     "ts-node": "^10.9.2",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
