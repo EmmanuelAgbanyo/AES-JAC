@@ -127,7 +127,7 @@ export const deleteSupplier = (id: string): Promise<void> => remove(ref(db, `${S
 
 
 // --- OVERWRITE (for seeding and import) ---
-const arrayToObject = <T extends { id: string }>(arr: T[]): { [id: string]: T } => {
+export const arrayToObject = <T extends { id: string }>(arr: T[]): { [id: string]: T } => {
     return arr.reduce((acc, item) => {
         if (item && item.id) { // Ensure item has an ID
             acc[item.id] = item;
